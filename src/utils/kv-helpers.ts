@@ -1,135 +1,103 @@
-export interface KVCache {
-  get(key: string): Promise<string | null>;
-  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
-  delete(key: string): Promise<void>;
-  list(options?: { prefix?: string; limit?: number }): Promise<{ keys: { name: string }[] }>;
+// src/utils/kv-helpers.ts
+import { KvCache } from '@liquidmetal-ai/raindrop-framework';
+
+/**
+ * Helper to safely get and parse JSON from KV
+ */
+export async function getJSON<T>(
+  kv: KvCache,
+  key: string
+): Promise<T | null> {
+  const data = await kv.get(key);
+  if (!data) return null;
+  
+  try {
+    return JSON.parse(data) as T;
+  } catch (error) {
+    console.error(`Failed to parse JSON for key ${key}:`, error);
+    return null;
+  }
 }
 
-export class KVHelpers {
-  // constructor(private kv: KVCache) {}
+/**
+ * Helper to stringify and put JSON into KV
+ */
+export async function putJSON<T>(
+  kv: KvCache,
+  key: string,
+  value: T,
+  options?: { expirationTtl?: number }
+): Promise<void> {
+  await kv.put(key, JSON.stringify(value), options);
+}
 
-  constructor(private kv: KVCache, private prefix: string = "") {}
+/**
+ * Helper to check if a key exists
+ */
+export async function exists(kv: KvCache, key: string): Promise<boolean> {
+  const value = await kv.get(key);
+  return value !== null;
+}
 
-  private buildKey(key: string) {
-    return this.prefix ? `${this.prefix}:${key}` : key;
-  }
+/**
+ * Helper to get all keys with a prefix
+ */
+export async function getAllKeys(
+  kv: KvCache,
+  prefix: string
+): Promise<string[]> {
+  const result = await kv.list({ prefix });
+  return result.keys.map(k => k.name);
+}
 
-  /**
-   * Get raw string value
-   */
-  async get(key: string): Promise<string | null> {
-    return this.buildKey(key);
-    //return await this.kv.get(this.buildKey(key));
-  }
+/**
+ * Helper to delete all keys with a prefix
+ */
+export async function deleteByPrefix(
+  kv: KvCache,
+  prefix: string
+): Promise<number> {
+  const keys = await getAllKeys(kv, prefix);
+  
+  await Promise.all(keys.map(key => kv.delete(key)));
+  
+  return keys.length;
+}
 
-  /**
-   * Get and parse JSON from KV storage
-   */
-  async getJSON<T>(key: string): Promise<T | null> {
-    const value = await this.kv.get(key);
-    if (!value) return null;
-    
-    try {
-      return JSON.parse(value) as T;
-    } catch (error) {
-      console.error(`Failed to parse JSON for key ${key}:`, error);
-      return null;
+/**
+ * Helper to batch get multiple keys
+ */
+export async function batchGet<T>(
+  kv: KvCache,
+  keys: string[]
+): Promise<Map<string, T>> {
+  const results = await Promise.all(
+    keys.map(async key => ({
+      key,
+      value: await getJSON<T>(kv, key)
+    }))
+  );
+  
+  const map = new Map<string, T>();
+  results.forEach(({ key, value }) => {
+    if (value !== null) {
+      map.set(key, value);
     }
-  }
+  });
+  
+  return map;
+}
 
-  /**
-   * Put raw string value
-   */
-  async put(
-    key: string,
-    value: string,
-    options?: { expirationTtl?: number }
-  ): Promise<void> {
-    await this.kv.put(this.buildKey(key), value, options);
-  }
-
-
-  /**
-   * Set JSON value in KV storage
-   */
-  async setJSON<T>(key: string, value: T, ttl?: number): Promise<void> {
-    const jsonStr = JSON.stringify(value);
-    await this.kv.put(key, jsonStr, ttl ? { expirationTtl: ttl } : undefined);
-  }
-
-  /**
-   * Delete a key from KV storage
-   */
-  async delete(key: string): Promise<void> {
-    await this.kv.delete(key);
-  }
-
-  /**
-   * List keys with a given prefix
-   */
-  async listKeys(prefix: string): Promise<string[]> {
-    const result = await this.kv.list({ prefix });
-    return result.keys.map(k => k.name);
-  }
-
-  /**
-   * Delete all keys with a given prefix
-   */
-  async deleteByPrefix(prefix: string): Promise<number> {
-    const keys = await this.listKeys(prefix);
-    await Promise.all(keys.map(key => this.delete(key)));
-    return keys.length;
-  }
-
-  /**
-   * Check if a key exists
-   */
-  async exists(key: string): Promise<boolean> {
-    const value = await this.kv.get(key);
-    return value !== null;
-  }
-
-  /**
-   * Get multiple keys at once
-   */
-  async getMany<T>(keys: string[]): Promise<(T | null)[]> {
-    return Promise.all(keys.map(key => this.getJSON<T>(key)));
-  }
-
-  /**
-   * Add item to a list stored in KV
-   */
-  async addToList(listKey: string, item: string): Promise<void> {
-    const list = await this.getJSON<string[]>(listKey) || [];
-    if (!list.includes(item)) {
-      list.push(item);
-      await this.setJSON(listKey, list);
-    }
-  }
-
-  /**
-   * Remove item from a list stored in KV
-   */
-  async removeFromList(listKey: string, item: string): Promise<void> {
-    const list = await this.getJSON<string[]>(listKey) || [];
-    const filtered = list.filter(i => i !== item);
-    await this.setJSON(listKey, filtered);
-  }
-
-  /**
-   * Get a list stored in KV
-   */
-  async getList(listKey: string): Promise<string[]> {
-    return await this.getJSON<string[]>(listKey) || [];
-  }
-
-  /**
-   * Clear all user data
-   */
-  async clearAllUsers(): Promise<void> {
-    console.log('Clearing all user data...');
-    await this.deleteByPrefix('user:');
-    await this.deleteByPrefix('users:');
-    console.log('User data cleared');
-  }
+/**
+ * Helper to batch put multiple key-value pairs
+ */
+export async function batchPut<T>(
+  kv: KvCache,
+  entries: Array<{ key: string; value: T; ttl?: number }>
+): Promise<void> {
+  await Promise.all(
+    entries.map(({ key, value, ttl }) =>
+      putJSON(kv, key, value, ttl ? { expirationTtl: ttl } : undefined)
+    )
+  );
 }

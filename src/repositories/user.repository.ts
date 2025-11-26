@@ -1,149 +1,228 @@
-import { KvCachePutOptions } from '@liquidmetal-ai/raindrop-framework';
-import { CreateUserInput, User, UserRole } from '../models/user.model';
-import { ConflictError, NotFoundError } from '../utils/errors';
-import { KVCache } from '../utils/kv-helpers';
-import { validateEmail, validateUsername } from '../utils/validators';
-import { BaseRepository } from './base';
+// src/repositories/user.repository.ts
+import { KvCache } from '@liquidmetal-ai/raindrop-framework';
+import { User, CreateUserInput, UserRole } from '../models/user.model';
+import { Timestamp } from '../models/common.model';
+import { NotFoundError, ValidationError } from '../utils/errors';
 
-/**
- * KV Key Structure:
- * - user:{userId}                      → User object
- * - user:email:{email}                 → userId (for login/lookup)
- * - user:username:{username}           → userId (for username uniqueness)
- * - user:{userId}:knowledges           → List of knowledge IDs (for teachers)
- * - user:{userId}:enrollments          → List of knowledge IDs (for students)
- * - user:{userId}:sessions             → List of session IDs (for students)
- * - users:teachers                     → List of all teacher user IDs
- * - users:students                     → List of all student user IDs
- */
+export class UserRepository {
+  private kv: KvCache;
+  private readonly USER_PREFIX = 'user:';
+  private readonly EMAIL_INDEX_PREFIX = 'email_idx:';
+  private readonly USERNAME_INDEX_PREFIX = 'username_idx:';
+  private readonly ROLE_INDEX_PREFIX = 'role_idx:';
 
-export class UserRepository extends BaseRepository<User> {
-  constructor(kvCache: KVCache) {
-    super(kvCache);
+  constructor(kv: KvCache) {
+    this.kv = kv;
   }
 
-  protected buildKey(...parts: string[]): string {
-    return parts.join(':');
+  /**
+   * Generate a simple unique ID
+   */
+  private generateId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  // ============================================
-  // USER CRUD OPERATIONS
-  // ============================================
-  async createUser(input: CreateUserInput): Promise<User> {
-    if (!validateEmail(input.email)) {
-      throw new ConflictError('Invalid email format');
-    }
-    if (!validateUsername(input.username)) {
-      throw new ConflictError('Username must be 3-50 characters');
-    }
-
+  /**
+   * Create a new user
+   */
+  async create(input: CreateUserInput): Promise<User> {
     // Check if email already exists
-    const existingByEmail = await this.getUserByEmail(input.email);
-    if (existingByEmail) {
-      throw new ConflictError('Email already registered');
+    const emailKey = `${this.EMAIL_INDEX_PREFIX}${input.email.toLowerCase()}`;
+    const existingEmailUser = await this.kv.get(emailKey);
+    if (existingEmailUser) {
+      throw new ValidationError('Email already exists');
     }
 
     // Check if username already exists
-    const existingByUsername = await this.getUserByUsername(input.username);
-    if (existingByUsername) {
-      throw new ConflictError('Username already taken');
+    const usernameKey = `${this.USERNAME_INDEX_PREFIX}${input.username.toLowerCase()}`;
+    const existingUsernameUser = await this.kv.get(usernameKey);
+    if (existingUsernameUser) {
+      throw new ValidationError('Username already exists');
     }
 
-    const userId = this.generateId('user');
+    const now: Timestamp = new Date().toISOString();
+    const userId = this.generateId();
+
     const user: User = {
       userId,
-      email: input.email.toLowerCase(),
+      email: input.email,
       username: input.username,
       role: input.role,
-      createdAt: this.now(),
-      updatedAt: this.now(),
-      profile: input.profile || {},
+      createdAt: now,
+      updatedAt: now,
+      profile: input.profile,
     };
 
-    //await this.create(userId, user);
-    // await this.kv.put(userId, JSON.stringify(user));
-    const putOptions: KvCachePutOptions = {};
-    // if (ttl) {
-    //   putOptions.expirationTtl = ttl;
-    // }
+    // Store user data
+    const userKey = `${this.USER_PREFIX}${userId}`;
+    await this.kv.put(userKey, JSON.stringify(user));
 
-    await this.kv.put(userId, JSON.stringify(user), putOptions);
+    // Create indexes
+    await this.kv.put(emailKey, userId);
+    await this.kv.put(usernameKey, userId);
+    await this.kv.put(`${this.ROLE_INDEX_PREFIX}${input.role}:${userId}`, userId);
 
-    // Create email lookup index
-    await this.kv.setJSON(
-      this.buildKey('user', 'email', user.email),
-      userId
-    );
-
-    // Create username lookup index
-    await this.kv.setJSON(
-      this.buildKey('user', 'username', user.username.toLowerCase()),
-      userId
-    );
-
-    await this.initEmptyListBasedOnRole(user);
     return user;
   }
 
-  // ============================================
-  // HELPER FUNCTION
-  // ============================================
-  async getUserOrNull(userId: string): Promise<User | null> {
-    return await this.get(userId);
-  }
+  /**
+   * Get user by ID
+   */
+  async getById(userId: string): Promise<User> {
+    const userKey = `${this.USER_PREFIX}${userId}`;
+    const userData = await this.kv.get(userKey);
 
-  async initEmptyListBasedOnRole(user: User) {
-    // Initialize empty lists based on role
-    const userId = user.userId;
-    if (user.role === UserRole.TEACHER) {
-      await this.kv.setJSON(
-        this.buildKey('user', userId, 'knowledges'),
-        []
-      );
-      // Add to teachers index
-      await this.kv.addToList(
-        this.buildKey('users', 'teachers'),
-        userId
-      );
-    } else {
-      await this.kv.setJSON(
-        this.buildKey('user', userId, 'enrollments'),
-        []
-      );
-      await this.kv.setJSON(
-        this.buildKey('user', userId, 'sessions'),
-        []
-      );
-      // Add to students index
-      await this.kv.addToList(
-        this.buildKey('users', 'students'),
-        userId
-      );
+    if (!userData) {
+      throw new NotFoundError(`User with ID ${userId} not found`);
     }
+
+    return JSON.parse(userData) as User;
   }
 
-  async getUser(userId: string): Promise<User> {
-    const user = await this.get(userId);
-    if (!user) {
-      throw new NotFoundError('User', userId);
+  /**
+   * Get user by email
+   */
+  async getByEmail(email: string): Promise<User> {
+    const emailKey = `${this.EMAIL_INDEX_PREFIX}${email.toLowerCase()}`;
+    const userId = await this.kv.get(emailKey);
+
+    if (!userId) {
+      throw new NotFoundError(`User with email ${email} not found`);
     }
-    return user;
+
+    return this.getById(userId);
   }
 
-  async getUserByEmail(email: string): Promise<User | null> {
-    const userId = await this.kv.getJSON<string>(
-      this.buildKey('user', 'email', email.toLowerCase())
-    );
-    if (!userId) return null;
-    return await this.getUserOrNull(userId);
+  /**
+   * Get user by username
+   */
+  async getByUsername(username: string): Promise<User> {
+    const usernameKey = `${this.USERNAME_INDEX_PREFIX}${username.toLowerCase()}`;
+    const userId = await this.kv.get(usernameKey);
+
+    if (!userId) {
+      throw new NotFoundError(`User with username ${username} not found`);
+    }
+
+    return this.getById(userId);
   }
 
-  async getUserByUsername(username: string): Promise<User | null> {
-    const userId = await this.kv.getJSON<string>(
-      this.buildKey('user', 'username', username.toLowerCase())
-    );
-    if (!userId) return null;
-    return await this.getUserOrNull(userId);
+  /**
+   * Update user
+   */
+  async update(
+    userId: string,
+    updates: Partial<Omit<User, 'userId' | 'createdAt'>>
+  ): Promise<User> {
+    const existingUser = await this.getById(userId);
+
+    // If email is being updated, check for conflicts
+    if (updates.email && updates.email !== existingUser.email) {
+      const emailKey = `${this.EMAIL_INDEX_PREFIX}${updates.email.toLowerCase()}`;
+      const existingEmailUser = await this.kv.get(emailKey);
+      if (existingEmailUser && existingEmailUser !== userId) {
+        throw new ValidationError('Email already exists');
+      }
+
+      // Delete old email index and create new one
+      await this.kv.delete(`${this.EMAIL_INDEX_PREFIX}${existingUser.email.toLowerCase()}`);
+      await this.kv.put(emailKey, userId);
+    }
+
+    // If username is being updated, check for conflicts
+    if (updates.username && updates.username !== existingUser.username) {
+      const usernameKey = `${this.USERNAME_INDEX_PREFIX}${updates.username.toLowerCase()}`;
+      const existingUsernameUser = await this.kv.get(usernameKey);
+      if (existingUsernameUser && existingUsernameUser !== userId) {
+        throw new ValidationError('Username already exists');
+      }
+
+      // Delete old username index and create new one
+      await this.kv.delete(`${this.USERNAME_INDEX_PREFIX}${existingUser.username.toLowerCase()}`);
+      await this.kv.put(usernameKey, userId);
+    }
+
+    // If role is being updated, update role index
+    if (updates.role && updates.role !== existingUser.role) {
+      await this.kv.delete(`${this.ROLE_INDEX_PREFIX}${existingUser.role}:${userId}`);
+      await this.kv.put(`${this.ROLE_INDEX_PREFIX}${updates.role}:${userId}`, userId);
+    }
+
+    const updatedUser: User = {
+      ...existingUser,
+      ...updates,
+      userId: existingUser.userId,
+      createdAt: existingUser.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const userKey = `${this.USER_PREFIX}${userId}`;
+    await this.kv.put(userKey, JSON.stringify(updatedUser));
+
+    return updatedUser;
   }
 
+  /**
+   * Delete user
+   */
+  async delete(userId: string): Promise<void> {
+    const user = await this.getById(userId);
+
+    // Delete user data
+    const userKey = `${this.USER_PREFIX}${userId}`;
+    await this.kv.delete(userKey);
+
+    // Delete indexes
+    await this.kv.delete(`${this.EMAIL_INDEX_PREFIX}${user.email.toLowerCase()}`);
+    await this.kv.delete(`${this.USERNAME_INDEX_PREFIX}${user.username.toLowerCase()}`);
+    await this.kv.delete(`${this.ROLE_INDEX_PREFIX}${user.role}:${userId}`);
+  }
+
+  /**
+   * List all users with optional role filter
+   */
+  async list(options?: { role?: UserRole; limit?: number }): Promise<User[]> {
+    const prefix = options?.role 
+      ? `${this.ROLE_INDEX_PREFIX}${options.role}:` 
+      : this.USER_PREFIX;
+    
+    const result = await this.kv.list({ 
+      prefix, 
+      limit: options?.limit || 100 
+    });
+
+    const users: User[] = [];
+
+    for (const key of result.keys) {
+      try {
+        let userId: string;
+        
+        if (options?.role) {
+          // Extract userId from role index key
+          userId = key.name.split(':').pop() || '';
+        } else {
+          // Extract userId from user key
+          userId = key.name.replace(this.USER_PREFIX, '');
+        }
+
+        const user = await this.getById(userId);
+        users.push(user);
+      } catch (error) {
+        // Skip if user not found (could be deleted)
+        console.error(`Error fetching user from key ${key.name}:`, error);
+      }
+    }
+
+    return users;
+  }
+
+  /**
+   * Get user count by role
+   */
+  async countByRole(role: UserRole): Promise<number> {
+    const result = await this.kv.list({ 
+      prefix: `${this.ROLE_INDEX_PREFIX}${role}:` 
+    });
+    return result.keys.length;
+  }
 }
