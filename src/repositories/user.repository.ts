@@ -4,6 +4,12 @@ import { User, CreateUserInput, UserRole } from '../models/user.model';
 import { Timestamp } from '../models/common.model';
 import { NotFoundError, ValidationError } from '../utils/errors';
 
+// Users (Already implemented):
+// ├── user:{userId}
+// ├── email_idx:{email}
+// ├── username_idx:{username}
+// └── role_idx:{role}:{userId}
+
 export class UserRepository {
   private kv: KvCache;
   private readonly USER_PREFIX = 'user:';
