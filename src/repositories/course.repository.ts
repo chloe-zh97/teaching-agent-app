@@ -283,5 +283,57 @@ export class CourseRepository {
   }
 
 
+  /**
+   * Update course slides (Step 3: after generation)
+   */
+  async updateSlides(courseId: string, input: UpdateCourseSlidesInput): Promise<Course> {
+    const course = await this.getById(courseId);
+
+    // Update status index if status changes
+    if (course.status !== 'slides-generated') {
+      await this.kv.delete(`${this.STATUS_INDEX_PREFIX}${course.status}:${courseId}`);
+      await this.kv.put(`${this.STATUS_INDEX_PREFIX}slides-generated:${courseId}`, courseId);
+    }
+
+    const updatedCourse: Course = {
+      ...course,
+      slides: input.slideIds,
+      totalSlides: input.slideIds.length,
+      status: 'slides-generated',
+      updatedAt: new Date().toISOString(),
+    };
+
+    const courseKey = `${this.COURSE_PREFIX}${courseId}`;
+    await this.kv.put(courseKey, JSON.stringify(updatedCourse));
+
+    return updatedCourse;
+  }
+
+  /**
+   * Update course agent (Step 4: after agent creation)
+   */
+  async updateAgent(courseId: string, input: UpdateCourseAgentInput): Promise<Course> {
+    const course = await this.getById(courseId);
+
+    // Update status index if status changes
+    if (course.status !== 'agent-created') {
+      await this.kv.delete(`${this.STATUS_INDEX_PREFIX}${course.status}:${courseId}`);
+      await this.kv.put(`${this.STATUS_INDEX_PREFIX}agent-created:${courseId}`, courseId);
+    }
+
+    const updatedCourse: Course = {
+      ...course,
+      agentId: input.agentId,
+      voiceId: input.voiceId,
+      status: 'agent-created',
+      updatedAt: new Date().toISOString(),
+    };
+
+    const courseKey = `${this.COURSE_PREFIX}${courseId}`;
+    await this.kv.put(courseKey, JSON.stringify(updatedCourse));
+
+    return updatedCourse;
+  }
+
 
 }

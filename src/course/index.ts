@@ -240,7 +240,7 @@ app.put('/api/courses/:id', async (c) => {
 });
 
 /**
- * PUT /api/courses/:id/outline
+ * PUT /api/courses/outline/:id
  * Update course outline (Step 2: after generation)
  */
 app.put('/api/courses/outline/:id', async (c) => {
@@ -270,6 +270,73 @@ app.put('/api/courses/outline/:id', async (c) => {
     }, 500);
   }
 });
+
+
+// TODO: make the API url patter to /api/courses/:id/slides
+/**
+ * PUT /api/courses/slides/:id
+ * Update course slides (Step 3: after generation)
+ */
+app.put('/api/courses/slides/:id', async (c) => {
+  try {
+    const courseId = c.req.param('id');
+    const { slideIds } = await c.req.json();
+
+    if (!slideIds || !Array.isArray(slideIds)) {
+      return c.json({ error: 'slideIds must be an array' }, 400);
+    }
+
+    const courseRepo = new CourseRepository(c.env.KV_CACHE);
+    const course = await courseRepo.updateSlides(courseId, { slideIds });
+
+    return c.json({
+      success: true,
+      message: 'Course slides updated successfully',
+      data: course,
+    });
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return c.json({ error: error.message }, 404);
+    }
+    return c.json({
+      error: 'Failed to update course slides',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
+
+/**
+ * POST /courses/:id/agent
+ * Update course agent (Step 4: after agent creation)
+ */
+app.put('/api/courses/agent/:id', async (c) => {
+  try {
+    const courseId = c.req.param('id');
+    const { agentId, voiceId } = await c.req.json();
+
+    if (!agentId || !voiceId) {
+      return c.json({ error: 'agentId and voiceId are required' }, 400);
+    }
+
+    const courseRepo = new CourseRepository(c.env.KV_CACHE);
+    const course = await courseRepo.updateAgent(courseId, { agentId, voiceId });
+
+    return c.json({
+      success: true,
+      message: 'Course agent updated successfully',
+      data: course,
+    });
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return c.json({ error: error.message }, 404);
+    }
+    return c.json({
+      error: 'Failed to update course agent',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
+
 
 
 export default class extends Service<Env> {
