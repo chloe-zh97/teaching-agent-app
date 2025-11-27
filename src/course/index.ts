@@ -161,6 +161,85 @@ app.delete('/api/courses/:id', async (c) => {
   }
 });
 
+/**
+ * PUT /api/courses/publish/:id
+ * Publish course
+ */
+app.put('/api/courses/publish/:id', async (c) => {
+  try {
+    const courseId = c.req.param('id');
+
+    const courseRepo = new CourseRepository(c.env.KV_CACHE);
+    const course = await courseRepo.publish(courseId);
+
+    return c.json({
+      success: true,
+      message: 'Course published successfully',
+      data: course,
+    });
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return c.json({ error: error.message }, 404);
+    }
+    if (error instanceof ValidationError) {
+      return c.json({ error: error.message }, 400);
+    }
+    return c.json({
+      error: 'Failed to publish course',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
+
+/**
+ * PUT /courses/:id
+ * Update course basic information
+ */
+app.put('/api/courses/:id', async (c) => {
+  try {
+    const courseId = c.req.param('id');
+    const updates: UpdateCourseInput = await c.req.json();
+
+    // Validate accessibility if provided
+    if (updates.accessibility) {
+      const validModes: AccessibilityMode[] = ['visual', 'auditory', 'kinesthetic', 'reading'];
+      if (!validModes.includes(updates.accessibility)) {
+        return c.json({ 
+          error: 'Invalid accessibility mode' 
+        }, 400);
+      }
+    }
+
+    // Validate concepts if provided
+    if (updates.concepts && (!Array.isArray(updates.concepts) || updates.concepts.length === 0)) {
+      return c.json({ 
+        error: 'Concepts must be a non-empty array' 
+      }, 400);
+    }
+
+    const courseRepo = new CourseRepository(c.env.KV_CACHE);
+    const course = await courseRepo.update(courseId, updates);
+
+    return c.json({
+      success: true,
+      message: 'Course updated successfully',
+      data: course,
+    });
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return c.json({ error: error.message }, 404);
+    }
+    if (error instanceof ValidationError) {
+      return c.json({ error: error.message }, 400);
+    }
+    return c.json({
+      error: 'Failed to update course',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
+
+
 export default class extends Service<Env> {
   async fetch(request: Request): Promise<Response> {
     return app.fetch(request, this.env);
