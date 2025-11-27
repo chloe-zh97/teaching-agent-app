@@ -59,6 +59,18 @@ PATCH  /api/sessions/:id/progress                          → Update progress
 PATCH  /api/sessions/:id/status                            → Update status
 PATCH  /api/sessions/:id/notes                             → Update notes
 DELETE /api/sessions/:id
+
+POST   /api/interactions                              → Create interaction
+GET    /api/interactions/:id                          → Get interaction
+GET    /api/sessions/:sessionId/interactions          → List by session
+GET    /api/sessions/:sessionId/interactions/summaries → Get summaries
+GET    /api/sessions/:sessionId/interactions/stats    → Session stats
+GET    /api/slides/:slideId/interactions              → List by slide
+GET    /api/students/:studentId/questions             → Student Q&A history
+GET    /api/courses/:courseId/interactions/stats      → Course stats
+GET    /api/courses/:courseId/questions/recent        → Recent questions
+PATCH  /api/interactions/:id                          → Update (feedback)
+DELETE /api/interactions/:id                          → Delete interaction
 ```
 ## Data Model
 **0 User（Done）**
@@ -267,7 +279,7 @@ KV Keys:
 - course_slides:{courseId}:{order} → Ordered slides for a course
 - slide_order:{courseId} → JSON array of slideIds in order (for quick access)
 
-**4 Agent (ElevenLabs Conversational Agent)**
+**4 Agent (ElevenLabs Conversational Agent) (In Progress...)**
 ```TypeScript
 export interface Agent {
   agentId: string; // ElevenLabs agent ID
@@ -409,7 +421,7 @@ KV Keys:
 - active_session:{studentId}:{courseId} → Currently active session
 - course_sessions:{courseId}:{sessionId} → All sessions for a course
 
-**7 Interation (Q&A, Navigation, Highlights) (Processing...)**
+**7 Interation (Q&A, Navigation, Highlights) (Done)**
 ```TypeScript
 export interface InteractionData {
   // Question/Answer
