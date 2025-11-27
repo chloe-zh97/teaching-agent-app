@@ -10,6 +10,56 @@ npm run start
 ```
 
 # Design
+## API Design
+```TypeScript
+POST   /api/users                               → Create user
+GET    /api/users/:userId                       → Get user by ID
+GET    /api/users/by-email/:email               → Get user by email
+GET    /api/users/by-username/:username         → Get user by username
+GET    /api/users?role=...&limit=...            → List users (optional role + limit filters)
+PUT    /api/users/:userId                       → Update user
+DELETE /api/users/:userId                       → Delete user
+GET    /api/users/stats/count-by-role/:role     → Count users by role
+
+
+POST   /api/courses                    → Create course
+GET    /api/courses/:id                → Get course
+GET    /api/courses?teacherId=...      → List courses
+PATCH  /api/courses/:id                → Update course
+POST   /api/courses/:id/outline        → Update outline (Step 2)
+POST   /api/courses/:id/slides         → Update slides (Step 3)
+POST   /api/courses/:id/agent          → Update agent (Step 4)
+POST   /api/courses/:id/publish        → Publish course
+DELETE /api/courses/:id                → Delete course
+GET    /api/courses/:id/agent          → Get agent info
+
+
+POST   /api/slides                             → Create slide
+POST   /api/slides/batch                       → Batch create
+GET    /api/slides/:id                         → Get slide
+GET    /api/courses/:courseId/slides           → List course slides
+GET    /api/courses/:courseId/slides/:order    → Get slide by position
+GET    /api/outline-nodes/:nodeId/slides       → List by outline node
+PATCH  /api/slides/:id                         → Update slide
+POST   /api/courses/:courseId/slides/reorder   → Reorder slides
+POST   /api/slides/:id/duplicate               → Duplicate slide
+DELETE /api/slides/:id                         → Delete slide
+GET    /api/courses/:courseId/slides/count     → Count slides
+
+
+POST   /api/sessions                                        → Create session
+POST   /api/sessions/resume-or-create                       → Resume or create
+GET    /api/sessions/:id                                    → Get session
+GET    /api/students/:studentId/sessions/active/:courseId  → Get active
+GET    /api/students/:studentId/sessions                   → List by student
+GET    /api/students/:studentId/sessions/summaries         → Get summaries
+GET    /api/courses/:courseId/sessions                     → List by course
+GET    /api/courses/:courseId/sessions/stats               → Course stats
+PATCH  /api/sessions/:id/progress                          → Update progress
+PATCH  /api/sessions/:id/status                            → Update status
+PATCH  /api/sessions/:id/notes                             → Update notes
+DELETE /api/sessions/:id
+```
 ## Data Model
 **0 User（Done）**
 ```TypeScript
