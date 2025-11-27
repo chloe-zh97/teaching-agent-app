@@ -1,0 +1,1235 @@
+{
+	"info": {
+		"_postman_id": "65c2d963-4c78-4c25-b362-36dc19d044ab",
+		"name": "Teaching Agent",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48037228",
+		"_collection_link": "https://sarah-zhong2024-8498277.postman.co/workspace/Sarah's-Workspace~4d37518f-7f7c-49b0-8d26-b85f26e0a377/collection/48037228-65c2d963-4c78-4c25-b362-36dc19d044ab?action=share&source=collection_link&creator=48037228"
+	},
+	"item": [
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Get user by userId",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "svc-01kb10vn1gypgj49wdgdepne0q.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/users/1764192400593-yg5lidoy2",
+							"host": [
+								"svc-01kb10vn1gypgj49wdgdepne0q",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"users",
+								"1764192400593-yg5lidoy2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get user by email",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "svc-01kb10vn1gypgj49wdgdepne0q.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/users/by-email/test02@gmail.com",
+							"host": [
+								"svc-01kb10vn1gypgj49wdgdepne0q",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"users",
+								"by-email",
+								"test02@gmail.com"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get user by username",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "svc-01kb10vn1gypgj49wdgdepne0q.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/users/by-username/test01",
+							"host": [
+								"svc-01kb10vn1gypgj49wdgdepne0q",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"users",
+								"by-username",
+								"test01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create new user",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test01@gmail.com\",\n    \"username\":\"test01\",\n    \"role\":\"teacher\",\n    \"profile\": {\n        \"firstName\":\"test01\",\n        \"lastName\":\"test01\",\n        \"bio\":\"female\"\n    }\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb10vn1gypgj49wdgdepne0q.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/users",
+							"host": [
+								"svc-01kb10vn1gypgj49wdgdepne0q",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "list kv key",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "svc-01kazgatss97cfkvrbse38yk2x.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/cache/list/user",
+							"host": [
+								"svc-01kazgatss97cfkvrbse38yk2x",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"cache",
+								"list",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete cache by prefix",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "svc-01kazgatss97cfkvrbse38yk2x.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/cache/user",
+							"host": [
+								"svc-01kazgatss97cfkvrbse38yk2x",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"cache",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test02@gmail.com\",\n    \"username\": \"test02\",\n    \"role\": \"student\",\n    \"profile\": {\n        \"firstName\": \"test01\",\n        \"lastName\": \"test01\",\n        \"bio\": \"female\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb10vn1gypgj49wdgdepne0q.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/users/1764192400593-yg5lidoy2",
+							"host": [
+								"svc-01kb10vn1gypgj49wdgdepne0q",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"users",
+								"1764192400593-yg5lidoy2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get user count by role",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "svc-01kb10vn1gypgj49wdgdepne0q.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/users/stats/count-by-role/teacher",
+							"host": [
+								"svc-01kb10vn1gypgj49wdgdepne0q",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"users",
+								"stats",
+								"count-by-role",
+								"teacher"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete user by user id",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb10vn1gypgj49wdgdepne0q.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/users/1764192400593-yg5lidoy2",
+							"host": [
+								"svc-01kb10vn1gypgj49wdgdepne0q",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"users",
+								"1764192400593-yg5lidoy2"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Course",
+			"item": [
+				{
+					"name": "Create new course",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"teacherId\": \"teacher01\",\n    \"title\": \"Introduction to Happy Life published\",\n    \"description\": \"description 02\",\n    \"knowledgeText\": \"Machine learning is a subset of artificial intelligence that focuses on building systems that can learn from data. Key concepts include supervised learning, unsupervised learning, and reinforcement learning. Neural networks are a fundamental building block, and gradient descent is the primary optimization algorithm used.\",\n    \"concepts\": [\n      \"gradient descent\",\n      \"model evaluation\"\n    ],\n    \"keywords\": [\"AI\", \"deep learning\", \"algorithms\", \"data science\"],\n    \"accessibility\": \"visual\",\n    \"isPublic\": true\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses",
+							"host": [
+								"svc-01kb16fwyhq3gzt54bkf2v75mk",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get course by id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1764202647173-1lzlq4fe8",
+							"host": [
+								"svc-01kb16fwyhq3gzt54bkf2v75mk",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1764202647173-1lzlq4fe8"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete course by id",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1764199298950-l9hd07ojz",
+							"host": [
+								"svc-01kb16fwyhq3gzt54bkf2v75mk",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1764199298950-l9hd07ojz"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get courses by query",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses?teacherId=teacher01",
+							"host": [
+								"svc-01kb16fwyhq3gzt54bkf2v75mk",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses"
+							],
+							"query": [
+								{
+									"key": "teacherId",
+									"value": "teacher01"
+								},
+								{
+									"key": "public",
+									"value": "true",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "draft",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publish course by course id",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1764202647173-1lzlq4fe8/publish",
+							"host": [
+								"svc-01kb16fwyhq3gzt54bkf2v75mk",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1764202647173-1lzlq4fe8",
+								"publish"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update course outline",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"outline\": {\n    \"nodes\": [\n      {\n        \"id\": \"node_1\",\n        \"title\": \"Introduction to Machine Learning update\",\n        \"description\": \"Overview of ML concepts and real-world applications.\",\n        \"level\": 1,\n        \"order\": 0,\n        \"estimatedDuration\": 30,\n        \"children\": [\n          {\n            \"id\": \"node_1_1\",\n            \"title\": \"What is Machine Learning?\",\n            \"description\": \"Definition and scope of ML.\",\n            \"level\": 2,\n            \"order\": 0,\n            \"estimatedDuration\": 10\n          },\n          {\n            \"id\": \"node_1_2\",\n            \"title\": \"Types of Learning\",\n            \"description\": \"Supervised, unsupervised, and reinforcement learning.\",\n            \"level\": 2,\n            \"order\": 1,\n            \"estimatedDuration\": 20\n          }\n        ]\n      },\n      {\n        \"id\": \"node_2\",\n        \"title\": \"Neural Networks\",\n        \"description\": \"Understanding basic and advanced neural network architectures.\",\n        \"level\": 1,\n        \"order\": 1,\n        \"estimatedDuration\": 45,\n        \"children\": [\n          {\n            \"id\": \"node_2_1\",\n            \"title\": \"Perceptrons\",\n            \"description\": \"Basic building blocks of neural networks.\",\n            \"level\": 2,\n            \"order\": 0,\n            \"estimatedDuration\": 15\n          },\n          {\n            \"id\": \"node_2_2\",\n            \"title\": \"Deep Networks\",\n            \"description\": \"Introduction to multi-layer neural network structures.\",\n            \"level\": 2,\n            \"order\": 1,\n            \"estimatedDuration\": 30\n          }\n        ]\n      }\n    ],\n    \"generatedAt\": \"2025-02-10T21:00:00.000Z\",\n    \"generationPrompt\": \"Generate a structured course outline based on teacher's knowledge text.\",\n    \"mermaidCode\": \"graph TD; node_1-->node_1_1; node_1-->node_1_2; node_2-->node_2_1; node_2-->node_2_2;\"\n  }\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1764202647173-1lzlq4fe8/outline",
+							"host": [
+								"svc-01kb16fwyhq3gzt54bkf2v75mk",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1764202647173-1lzlq4fe8",
+								"outline"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update course basic info",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Modified title again\",\n    \"description\": \"description 02 modified\",\n    \"knowledgeText\": \"modified knowledgeText\",\n    \"concepts\": [\n      \"modified concepts\"\n    ],\n    \"keywords\": [\"modifiedAI\", \"modified deep learning\"],\n    \"accessibility\": \"reading\",\n    \"isPublic\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1764202647173-1lzlq4fe8",
+							"host": [
+								"svc-01kb16fwyhq3gzt54bkf2v75mk",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1764202647173-1lzlq4fe8"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update course slides",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"slideIds\": [\"slide01\", \"slide02\", \"slide04\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1764202647173-1lzlq4fe8/slides",
+							"host": [
+								"svc-01kb16fwyhq3gzt54bkf2v75mk",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1764202647173-1lzlq4fe8",
+								"slides"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update course agent",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"agentId\": \"agentId02\",\n    \"voiceId\": \"voiceId02\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1764202647173-1lzlq4fe8/agent",
+							"host": [
+								"svc-01kb16fwyhq3gzt54bkf2v75mk",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1764202647173-1lzlq4fe8",
+								"agent"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get agent ID for a course",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"agentId\": \"agentId01\",\n    \"voiceId\": \"voiceId01\"\n}"
+						},
+						"url": {
+							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1764202647173-1lzlq4fe8/agent",
+							"host": [
+								"svc-01kb16fwyhq3gzt54bkf2v75mk",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1764202647173-1lzlq4fe8",
+								"agent"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Slide",
+			"item": [
+				{
+					"name": "Create slide",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseId\": \"course-reorder-01\",\n  \"order\": 1,\n  \"title\": \"Title 02\",\n  \"content\": [\n    {\n      \"type\": \"heading\",\n      \"content\": \"What is Machine Learning?\"\n    },\n    {\n      \"type\": \"bullet-points\",\n      \"content\": [\n        \"Machine Learning allows computers to learn patterns\",\n        \"Used in vision, NLP, robotics, and predictions\",\n        \"Supervised, unsupervised, and reinforcement learning\"\n      ]\n    },\n    {\n      \"type\": \"image\",\n      \"content\": \"https://example.com/ml-diagram.png\",\n      \"style\": { \"width\": \"60%\" }\n    }\n  ],\n//   \"speakerNotes\": \"Explain ML definition and give real-world examples.\",\n//   \"outlineNodeId\": \"node_1_1\",\n  \"accessibilityMode\": \"visual\",\n//   \"visualAids\": [\n//     \"https://example.com/ml-visual1.png\"\n//   ],\n//   \"audioNarration\": \"Machine learning is a field of AI enabling systems to learn from data.\",\n  \"layout\": \"content\",\n  \"theme\": \"light\",\n  \"backgroundColor\": \"#ffffff\",\n  \"generatedBy\": \"teacher\",\n  \"aiPrompt\": \"Generate an introductory ML slide that covers the basics.\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/slides",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"slides"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create slide batch",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"slides\": [\n        {\n            \"courseId\": \"course_123\",\n            \"order\": 0,\n            \"title\": \"Introduction to Machine Learning\",\n            \"content\": [\n                {\n                    \"type\": \"heading\",\n                    \"content\": \"What is Machine Learning?\"\n                },\n                {\n                    \"type\": \"text\",\n                    \"content\": \"Machine learning enables systems to learn from data.\"\n                }\n            ],\n            \"speakerNotes\": \"Introduce the concept and give 1–2 examples.\",\n            \"outlineNodeId\": \"node_1\",\n            \"accessibilityMode\": \"visual\",\n            \"visualAids\": [\n                \"https://example.com/intro-ml.png\"\n            ],\n            \"layout\": \"content\",\n            \"generatedBy\": \"teacher\"\n        },\n        {\n            \"courseId\": \"course_123\",\n            \"order\": 1,\n            \"title\": \"Types of Machine Learning\",\n            \"content\": [\n                {\n                    \"type\": \"bullet-points\",\n                    \"content\": [\n                        \"Supervised Learning\",\n                        \"Unsupervised Learning\",\n                        \"Reinforcement Learning\"\n                    ]\n                }\n            ],\n            \"speakerNotes\": \"Quickly explain each learning type.\",\n            \"outlineNodeId\": \"node_1_1\",\n            \"accessibilityMode\": \"visual\",\n            \"layout\": \"content\",\n            \"generatedBy\": \"ai\",\n            \"aiPrompt\": \"Generate slide covering ML types.\"\n        },\n        {\n            \"courseId\": \"course_123\",\n            \"order\": 2,\n            \"title\": \"Neural Networks Overview\",\n            \"content\": [\n                {\n                    \"type\": \"diagram\",\n                    \"content\": \"https://example.com/neural-network-diagram.png\"\n                }\n            ],\n            \"speakerNotes\": \"Walk through input → hidden → output layers.\",\n            \"outlineNodeId\": \"node_2\",\n            \"accessibilityMode\": \"visual\",\n            \"visualAids\": [\n                \"https://example.com/nn-diagram-1.png\"\n            ],\n            \"layout\": \"diagram\",\n            \"generatedBy\": \"teacher\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/slides/batch",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"slides",
+								"batch"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get slide by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/slides/slide_1764216125732-0wohuch5h",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"slides",
+								"slide_1764216125732-0wohuch5h"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List all slides of a course",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course-reorder-01/slides",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course-reorder-01",
+								"slides"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get slide by course and order position",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_123/slides/1",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_123",
+								"slides",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List slides by outline node",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/outline-nodes/node_1_1/slides",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"outline-nodes",
+								"node_1_1",
+								"slides"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update slide by id",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Introduction to Machine Learning\",\n  \"content\": [\n    {\n      \"type\": \"heading\",\n      \"content\": \"What is Machine Learning?\"\n    },\n    {\n      \"type\": \"bullet-points\",\n      \"content\": [\n        \"ML enables systems to learn from data\",\n        \"Used in vision, NLP, and robotics\",\n        \"Supervised vs unsupervised learning\"\n      ]\n    },\n    {\n      \"type\": \"quote\",\n      \"content\": \"Machine learning is the last invention humanity will ever need. – Nick Bostrom\"\n    }\n  ],\n  \"speakerNotes\": \"Explain the main categories with real-world examples.\",\n  \"outlineNodeId\": \"node_1_1\",\n  \"visualAids\": [\n    \"https://example.com/images/ml-diagram.png\",\n    \"https://example.com/images/learning-types.png\"\n  ],\n  \"audioNarration\": \"Introduction to machine learning updated narration.\",\n  \"layout\": \"content\",\n  \"theme\": \"modern-blue\",\n  \"backgroundColor\": \"#F5F7FF\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/slides/slide_1764216125732-0wohuch5h",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"slides",
+								"slide_1764216125732-0wohuch5h"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reorder slides in a course",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"slideOrders\": [\n    { \"slideId\": \"slide_1764217455952-o6nsowqov\", \"newOrder\": 0 },\n    { \"slideId\": \"slide_1764217440857-qfvgahxj6\", \"newOrder\": 1 }\n  ]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course-reorder-01/slides/reorder",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course-reorder-01",
+								"slides",
+								"reorder"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Duplicate a slide",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/slides/slide_1764217455952-o6nsowqov/duplicate",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"slides",
+								"slide_1764217455952-o6nsowqov",
+								"duplicate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete slide by id",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/slides/slide_1764218754269-9yfkjlfnw",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"slides",
+								"slide_1764218754269-9yfkjlfnw"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get total slide count for a course",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course-reorder-01/of/slides/count",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course-reorder-01",
+								"of",
+								"slides",
+								"count"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Session",
+			"item": [
+				{
+					"name": "Create new session",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseId\": \"course_1764202647173-1lzlq4fe8\",\n  \"studentId\": \"student_98765\",\n  \"isPracticeMode\": false\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/sessions",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"sessions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resume existing active session or create new one",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseId\": \"course_1764202647173-1lzlq4fe8\",\n  \"studentId\": \"student_98765\",\n  \"isPracticeMode\": false\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/sessions/resume-or-create",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"sessions",
+								"resume-or-create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get session by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/sessions/session_1764263637619-srl3q53cw",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"sessions",
+								"session_1764263637619-srl3q53cw"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update session progress",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentSlideOrder\": 2,\n  \"currentSlideId\": \"slide_002\",\n  \"action\": \"visit\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/sessions/session_1764263637619-srl3q53cw/progress",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"sessions",
+								"session_1764263637619-srl3q53cw",
+								"progress"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update session status",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"paused\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/sessions/session_1764263637619-srl3q53cw/status",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"sessions",
+								"session_1764263637619-srl3q53cw",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update session notes",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notes\": \"update notes\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/sessions/session_1764263637619-srl3q53cw/notes",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"sessions",
+								"session_1764263637619-srl3q53cw",
+								"notes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List all sessions for a student",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/students/student_98765/sessions",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"students",
+								"student_98765",
+								"sessions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get session summaries for student",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/students/student_98765/sessions/summaries",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"students",
+								"student_98765",
+								"sessions",
+								"summaries"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List all sessions for a course",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1764202647173-1lzlq4fe8/sessions",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1764202647173-1lzlq4fe8",
+								"sessions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get session statistics for a course",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1764202647173-1lzlq4fe8/sessions/stats",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1764202647173-1lzlq4fe8",
+								"sessions",
+								"stats"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get active session for student and course",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/students/student_98765/sessions/active/course_1764202647173-1lzlq4fe8",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"students",
+								"student_98765",
+								"sessions",
+								"active",
+								"course_1764202647173-1lzlq4fe8"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete session by id",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb34qn1178vt15dxrx4adyk8.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/sessions/session_1764265102532-skn77p6hg",
+							"host": [
+								"svc-01kb34qn1178vt15dxrx4adyk8",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"sessions",
+								"session_1764265102532-skn77p6hg"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Interaction",
+			"item": []
+		}
+	]
+}
