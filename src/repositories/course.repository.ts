@@ -257,5 +257,31 @@ export class CourseRepository {
     return updatedCourse;
   }
 
+  /**
+   * Update course outline (Step 2: after generation)
+   */
+  async updateOutline(courseId: string, input: UpdateCourseOutlineInput): Promise<Course> {
+    const course = await this.getById(courseId);
+
+    // Update status index if status changes
+    if (course.status === 'draft') {
+      await this.kv.delete(`${this.STATUS_INDEX_PREFIX}${course.status}:${courseId}`);
+      await this.kv.put(`${this.STATUS_INDEX_PREFIX}outline-generated:${courseId}`, courseId);
+    }
+
+    const updatedCourse: Course = {
+      ...course,
+      outline: input.outline,
+      status: 'outline-generated',
+      updatedAt: new Date().toISOString(),
+    };
+
+    const courseKey = `${this.COURSE_PREFIX}${courseId}`;
+    await this.kv.put(courseKey, JSON.stringify(updatedCourse));
+
+    return updatedCourse;
+  }
+
+
 
 }

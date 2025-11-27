@@ -239,6 +239,38 @@ app.put('/api/courses/:id', async (c) => {
   }
 });
 
+/**
+ * PUT /api/courses/:id/outline
+ * Update course outline (Step 2: after generation)
+ */
+app.put('/api/courses/outline/:id', async (c) => {
+  try {
+    const courseId = c.req.param('id');
+    const { outline } = await c.req.json();
+
+    if (!outline) {
+      return c.json({ error: 'Outline is required' }, 400);
+    }
+
+    const courseRepo = new CourseRepository(c.env.KV_CACHE);
+    const course = await courseRepo.updateOutline(courseId, { outline });
+
+    return c.json({
+      success: true,
+      message: 'Course outline updated successfully',
+      data: course,
+    });
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return c.json({ error: error.message }, 404);
+    }
+    return c.json({
+      error: 'Failed to update course outline',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
+
 
 export default class extends Service<Env> {
   async fetch(request: Request): Promise<Response> {
