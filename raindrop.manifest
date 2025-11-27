@@ -9,8 +9,12 @@ application "teaching-agent-app" {
     visibility = "public"
   }
 
-  service "ai" {
+  service "course" {
     visibility = "public"
+  }
+
+  service "ai" {
+    visibility = "private"
   }
 
   kv_cache "kv_cache" {}
