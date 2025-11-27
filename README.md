@@ -11,7 +11,7 @@ npm run start
 
 # Design
 ## Data Model
-**0 User**
+**0 User（Done）**
 ```TypeScript
 export enum UserRole {
   TEACHER = 'teacher',
@@ -50,7 +50,7 @@ Users:
  └── role_idx:{role}:{userId}
 ```
 
-**1 Course**
+**1 Course（Done）**
 ```TypeScript
 export interface Course {
   courseId: string;
@@ -117,7 +117,7 @@ KV Keys:
 - public_courses:{courseId} → Public courses (if isPublic=true)
 - course_by_status:{status}:{courseId} → Status-based filtering
 
-**2 OutlineStructure**
+**2 OutlineStructure（Done）**
 ```TypeScript
 export interface OutlineNode {
   id: string;
@@ -151,7 +151,7 @@ export interface GenerateOutlineResponse {
 ```
 Note: Outline is embedded in Course, not a separate entity. This aligns with your API where outline is generated and immediately used.
 
-**3 Slide (Individual Presentation Page)**
+**3 Slide (Individual Presentation Page) (Working on it...)**
 ```TypeScript
 export interface SlideContent {
   type: 'text' | 'heading' | 'bullet-points' | 'diagram' | 'image' | 'code' | 'quote';

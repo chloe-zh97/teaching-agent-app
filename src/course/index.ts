@@ -162,10 +162,10 @@ app.delete('/api/courses/:id', async (c) => {
 });
 
 /**
- * PUT /api/courses/publish/:id
- * Publish course
+ * PUT /api/courses/:id/publish
+ * Make course status to published
  */
-app.put('/api/courses/publish/:id', async (c) => {
+app.put('/api/courses/:id/publish', async (c) => {
   try {
     const courseId = c.req.param('id');
 
@@ -240,10 +240,10 @@ app.put('/api/courses/:id', async (c) => {
 });
 
 /**
- * PUT /api/courses/outline/:id
+ * PUT /api/courses/:id/outline
  * Update course outline (Step 2: after generation)
  */
-app.put('/api/courses/outline/:id', async (c) => {
+app.put('/api/courses/:id/outline', async (c) => {
   try {
     const courseId = c.req.param('id');
     const { outline } = await c.req.json();
@@ -272,12 +272,11 @@ app.put('/api/courses/outline/:id', async (c) => {
 });
 
 
-// TODO: make the API url patter to /api/courses/:id/slides
 /**
  * PUT /api/courses/slides/:id
  * Update course slides (Step 3: after generation)
  */
-app.put('/api/courses/slides/:id', async (c) => {
+app.put('/api/courses/:id/slides', async (c) => {
   try {
     const courseId = c.req.param('id');
     const { slideIds } = await c.req.json();
@@ -305,11 +304,12 @@ app.put('/api/courses/slides/:id', async (c) => {
   }
 });
 
+
 /**
  * POST /courses/:id/agent
  * Update course agent (Step 4: after agent creation)
  */
-app.put('/api/courses/agent/:id', async (c) => {
+app.put('/api/courses/:id/agent', async (c) => {
   try {
     const courseId = c.req.param('id');
     const { agentId, voiceId } = await c.req.json();
@@ -337,6 +337,38 @@ app.put('/api/courses/agent/:id', async (c) => {
   }
 });
 
+/**
+ * GET /api/courses/:id/agent
+ * Get agent ID for a course (for API compatibility)
+ */
+app.get('/api/courses/:id/agent', async (c) => {
+  try {
+    const courseId = c.req.param('id');
+    const courseRepo = new CourseRepository(c.env.KV_CACHE);
+    const course = await courseRepo.getById(courseId);
+
+    if (!course.agentId) {
+      return c.json({
+        agentId: null,
+        message: 'Agent not yet created for this course',
+      });
+    }
+
+    return c.json({
+      success: true,
+      agentId: course.agentId,
+      voiceId: course.voiceId,
+    });
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return c.json({ error: error.message }, 404);
+    }
+    return c.json({
+      error: 'Failed to get course agent',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
 
 
 export default class extends Service<Env> {
