@@ -199,4 +199,89 @@ export class CourseRepository {
     );
   }
 
+  /**
+   * Publish course
+   */
+  async publish(courseId: string): Promise<Course> {
+    const course = await this.getById(courseId);
+
+    // if (course.status !== 'agent-created' && course.status !== 'published') {
+    //   throw new ValidationError('Course must have agent created before publishing');
+    // }
+
+    // Update status index
+    await this.kv.delete(`${this.STATUS_INDEX_PREFIX}${course.status}:${courseId}`);
+    await this.kv.put(`${this.STATUS_INDEX_PREFIX}published:${courseId}`, courseId);
+
+    const updatedCourse: Course = {
+      ...course,
+      status: 'published',
+      publishedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const courseKey = `${this.COURSE_PREFIX}${courseId}`;
+    await this.kv.put(courseKey, JSON.stringify(updatedCourse));
+
+    return updatedCourse;
+  }
+
+  /**
+   * Update course basic information
+   */
+  async update(courseId: string, updates: UpdateCourseInput): Promise<Course> {
+    const existingCourse = await this.getById(courseId);
+
+    // Update isPublic index if changed
+    if (updates.isPublic !== undefined && updates.isPublic !== existingCourse.isPublic) {
+      const publicKey = `${this.PUBLIC_COURSES_PREFIX}${courseId}`;
+      if (updates.isPublic) {
+        await this.kv.put(publicKey, courseId);
+      } else {
+        await this.kv.delete(publicKey);
+      }
+    }
+
+    const updatedCourse: Course = {
+      ...existingCourse,
+      ...updates,
+      courseId: existingCourse.courseId,
+      teacherId: existingCourse.teacherId,
+      createdAt: existingCourse.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const courseKey = `${this.COURSE_PREFIX}${courseId}`;
+    await this.kv.put(courseKey, JSON.stringify(updatedCourse));
+
+    return updatedCourse;
+  }
+
+  /**
+   * Update course outline (Step 2: after generation)
+   */
+  async updateOutline(courseId: string, input: UpdateCourseOutlineInput): Promise<Course> {
+    const course = await this.getById(courseId);
+
+    // Update status index if status changes
+    if (course.status === 'draft') {
+      await this.kv.delete(`${this.STATUS_INDEX_PREFIX}${course.status}:${courseId}`);
+      await this.kv.put(`${this.STATUS_INDEX_PREFIX}outline-generated:${courseId}`, courseId);
+    }
+
+    const updatedCourse: Course = {
+      ...course,
+      outline: input.outline,
+      status: 'outline-generated',
+      updatedAt: new Date().toISOString(),
+    };
+
+    const courseKey = `${this.COURSE_PREFIX}${courseId}`;
+    await this.kv.put(courseKey, JSON.stringify(updatedCourse));
+
+    return updatedCourse;
+  }
+
+
+
 }
