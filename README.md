@@ -60,6 +60,7 @@ PATCH  /api/sessions/:id/status                            → Update status
 PATCH  /api/sessions/:id/notes                             → Update notes
 DELETE /api/sessions/:id
 
+
 POST   /api/interactions                              → Create interaction
 GET    /api/interactions/:id                          → Get interaction
 GET    /api/sessions/:sessionId/interactions          → List by session
@@ -71,6 +72,20 @@ GET    /api/courses/:courseId/interactions/stats      → Course stats
 GET    /api/courses/:courseId/questions/recent        → Recent questions
 PATCH  /api/interactions/:id                          → Update (feedback)
 DELETE /api/interactions/:id                          → Delete interaction
+
+
+POST   /api/agents                           → Create agent
+POST   /api/courses/:courseId/agent          → Create (frontend pattern)
+GET    /api/agents/:id                       → Get by ID
+GET    /api/courses/:courseId/agent          → Get by course
+GET    /api/agents/elevenlabs/:id            → Get by ElevenLabs ID
+GET    /api/teachers/:teacherId/agents       → List teacher's agents
+PATCH  /api/agents/:id                       → Update configuration
+PATCH  /api/agents/:id/status                → Update status
+POST   /api/agents/:id/refresh-knowledge     → Refresh from course
+GET    /api/agents/:id/stats                 → Get statistics
+GET    /api/agents/:id/ready                 → Check readiness
+DELETE /api/agents/:id                       → Delete agent
 ```
 ## Data Model
 **0 User（Done）**
@@ -279,7 +294,7 @@ KV Keys:
 - course_slides:{courseId}:{order} → Ordered slides for a course
 - slide_order:{courseId} → JSON array of slideIds in order (for quick access)
 
-**4 Agent (ElevenLabs Conversational Agent) (In Progress...)**
+**4 Agent (ElevenLabs Conversational Agent) (Done)**
 ```TypeScript
 export interface Agent {
   agentId: string; // ElevenLabs agent ID
