@@ -86,6 +86,19 @@ POST   /api/agents/:id/refresh-knowledge     → Refresh from course
 GET    /api/agents/:id/stats                 → Get statistics
 GET    /api/agents/:id/ready                 → Check readiness
 DELETE /api/agents/:id                       → Delete agent
+
+
+POST   /api/transcribe                                  → Main transcription endpoint
+POST   /api/transcriptions                              → Create record
+GET    /api/transcriptions/:id                          → Get by ID
+GET    /api/users/:userId/transcriptions                → List user's transcriptions
+GET    /api/users/:userId/transcriptions/summaries      → Get summaries
+GET    /api/users/:userId/transcriptions/purpose/:purpose → Filter by purpose
+GET    /api/users/:userId/transcriptions/count          → Count transcriptions
+PATCH  /api/transcriptions/:id                          → Update
+POST   /api/transcriptions/:id/complete                 → Mark as completed
+POST   /api/transcriptions/:id/fail                     → Mark as failed
+DELETE /api/transcriptions/:id                          → Delete
 ```
 ## Data Model
 **0 User（Done）**
@@ -343,7 +356,7 @@ KV Keys:
 - agent:{agentId} → Agent data
 - course_agent:{courseId} → Course's agent (1:1 relationship)
 
-**5 Transcription**
+**5 Transcription (Done)**
 ```TypeScript
 export interface Transcription {
   transcriptionId: string;
