@@ -29,5 +29,9 @@ application "teaching-agent-app" {
     visibility = "public"
   }
 
+  service "transcription" {
+    visibility = "public"
+  }
+
   kv_cache "kv_cache" {}
 }
