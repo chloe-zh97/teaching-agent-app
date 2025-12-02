@@ -5,11 +5,31 @@
 
 application "teaching-agent-app" {
 
-  service "teacher" {
+  service "user" {
     visibility = "public"
   }
 
-  service "ai" {
+  service "course" {
+    visibility = "public"
+  }
+
+  service "slide" {
+    visibility = "public"
+  }
+
+  service "session" {
+    visibility = "public"
+  }
+
+  service "interaction" {
+    visibility = "public"
+  }
+
+  service "agent" {
+    visibility = "public"
+  }
+
+  service "transcription" {
     visibility = "public"
   }
 
