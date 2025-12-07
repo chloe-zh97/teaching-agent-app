@@ -11,4 +11,5 @@ export interface Env {
   logger: Logger;
   mem: KvCache;
   tracer: Tracer;
+  ELEVENLABS_API_KEY: string; // ElevenLabs API key for conversational AI
 }

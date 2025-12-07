@@ -97,8 +97,8 @@ export interface UpdateCourseSlidesInput {
 }
 
 export interface UpdateCourseAgentInput {
-  agentId: string;
-  voiceId: string;
+  agentId?: string;
+  voiceId?: string;
 }
 
 // API Response types

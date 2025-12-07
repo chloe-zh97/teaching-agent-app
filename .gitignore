@@ -2,6 +2,12 @@ node_modules
 dist/
 .raindrop
 
+# Environment variables (IMPORTANT: Never commit API keys!)
+.dev.vars
+.env
+.env.local
+.env.*.local
+
 # IDE / Editor
 .vscode/
 .idea/

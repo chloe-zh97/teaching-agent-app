@@ -62,39 +62,46 @@ app.post('/api/agents', async (c) => {
 
 /**
  * POST /api/courses/:courseId/agent
- * Create agent for a course (alternative endpoint matching your frontend)
+ * Create agent for a course WITH FULL ELEVENLABS INTEGRATION
+ * This triggers the complete workflow: KB generation → prompt → ElevenLabs API → store
  */
 app.post('/api/courses/:courseId/agent', async (c) => {
   try {
     const courseId = c.req.param('courseId');
-    const { voiceId, teacherId } = await c.req.json();
+    const { voiceId, teacherId, recreate } = await c.req.json();
 
     if (!teacherId) {
       return c.json({ error: 'teacherId is required' }, 400);
     }
 
-    const agentRepo = new AgentRepository(c.env.KV_CACHE);
-    const agent = await agentRepo.create({
-      courseId,
-      teacherId,
-      voiceId,
-    });
+    if (!c.env.ELEVENLABS_API_KEY) {
+      return c.json({
+        error: 'ElevenLabs API key not configured',
+        message: 'Set ELEVENLABS_API_KEY in Cloudflare Workers environment variables',
+      }, 500);
+    }
 
-    // Update course with agent info (as per your flow)
-    const courseRepo = new CourseRepository(c.env.KV_CACHE);
-    await courseRepo.updateAgent(courseId, {
-      agentId: agent.agentId,
-      voiceId: agent.elevenLabsConfig.voiceId,
-    });
+    console.log(`🎙️  Creating agent for course ${courseId} (teacherId: ${teacherId})`);
+
+    // Import workflow
+    const {
+      executeAgentCreationWorkflow,
+      recreateAgentWorkflow,
+    } = await import('../workflows/agent.workflow');
+
+    // Execute workflow (recreate if requested)
+    const result = recreate
+      ? await recreateAgentWorkflow(courseId, teacherId, voiceId, c.env.KV_CACHE, c.env.ELEVENLABS_API_KEY)
+      : await executeAgentCreationWorkflow(courseId, teacherId, voiceId, c.env.KV_CACHE, c.env.ELEVENLABS_API_KEY);
 
     return c.json({
       success: true,
-      message: 'Agent configuration created',
-      agentId: agent.agentId,
-      voiceId: agent.elevenLabsConfig.voiceId,
-      status: agent.status,
-      note: 'Complete ElevenLabs agent creation, then update status',
-    }, 201);
+      message: result.message,
+      agentId: result.agentId,
+      elevenLabsAgentId: result.elevenLabsAgentId,
+      status: result.status,
+      warnings: result.warnings,
+    }, result.status === 'created' ? 201 : 200);
   } catch (error) {
     if (error instanceof ConflictError) {
       return c.json({ error: error.message }, 409);
@@ -102,6 +109,10 @@ app.post('/api/courses/:courseId/agent', async (c) => {
     if (error instanceof NotFoundError) {
       return c.json({ error: error.message }, 404);
     }
+    if (error instanceof ValidationError) {
+      return c.json({ error: error.message }, 400);
+    }
+    console.error('❌ Agent creation failed:', error);
     return c.json({
       error: 'Failed to create agent',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -295,23 +306,51 @@ app.patch('/api/agents/:id/status', async (c) => {
 /**
  * POST /api/agents/:id/refresh-knowledge
  * Refresh agent knowledge from updated course
+ * Triggers workflow to rebuild knowledge base and update ElevenLabs agent
  */
 app.post('/api/agents/:id/refresh-knowledge', async (c) => {
   try {
     const agentId = c.req.param('id');
 
+    if (!c.env.ELEVENLABS_API_KEY) {
+      return c.json({
+        error: 'ElevenLabs API key not configured',
+        message: 'Set ELEVENLABS_API_KEY in environment variables',
+      }, 500);
+    }
+
+    console.log(`🔄 Refreshing knowledge for agent ${agentId}`);
+
+    // Get agent to find course ID
     const agentRepo = new AgentRepository(c.env.KV_CACHE);
-    const agent = await agentRepo.refreshKnowledge(agentId);
+    const agent = await agentRepo.getById(agentId);
+
+    if (!agent) {
+      return c.json({ error: 'Agent not found' }, 404);
+    }
+
+    // Import and execute refresh workflow
+    const { refreshAgentKnowledgeWorkflow } = await import('../workflows/agent.workflow');
+
+    await refreshAgentKnowledgeWorkflow(
+      agent.courseId,
+      c.env.KV_CACHE,
+      c.env.ELEVENLABS_API_KEY
+    );
+
+    // Get updated agent
+    const updatedAgent = await agentRepo.getById(agentId);
 
     return c.json({
       success: true,
       message: 'Agent knowledge refreshed successfully',
-      data: agent,
+      data: updatedAgent,
     });
   } catch (error) {
     if (error instanceof NotFoundError) {
       return c.json({ error: error.message }, 404);
     }
+    console.error('❌ Failed to refresh agent knowledge:', error);
     return c.json({
       error: 'Failed to refresh agent knowledge',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -373,24 +412,36 @@ app.get('/api/agents/:id/ready', async (c) => {
 
 /**
  * DELETE /api/agents/:id
- * Delete agent
+ * Delete agent completely (both ElevenLabs and database)
+ * Triggers workflow for complete cleanup
  */
 app.delete('/api/agents/:id', async (c) => {
   try {
     const agentId = c.req.param('id');
 
-    const agentRepo = new AgentRepository(c.env.KV_CACHE);
-    await agentRepo.delete(agentId);
+    if (!c.env.ELEVENLABS_API_KEY) {
+      return c.json({
+        error: 'ElevenLabs API key not configured',
+        message: 'Set ELEVENLABS_API_KEY in environment variables',
+      }, 500);
+    }
+
+    console.log(`🗑️  Deleting agent ${agentId}`);
+
+    // Import and execute delete workflow
+    const { deleteAgentWorkflow } = await import('../workflows/agent.workflow');
+
+    await deleteAgentWorkflow(agentId, c.env.KV_CACHE, c.env.ELEVENLABS_API_KEY);
 
     return c.json({
       success: true,
-      message: 'Agent deleted successfully',
-      note: 'Remember to also delete the ElevenLabs conversational agent',
+      message: 'Agent deleted successfully from both ElevenLabs and database',
     });
   } catch (error) {
     if (error instanceof NotFoundError) {
       return c.json({ error: error.message }, 404);
     }
+    console.error('❌ Failed to delete agent:', error);
     return c.json({
       error: 'Failed to delete agent',
       message: error instanceof Error ? error.message : 'Unknown error',
