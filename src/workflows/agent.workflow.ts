@@ -5,8 +5,6 @@
  * This is the CORE workflow that ties everything together:
  * Course → Slides → Knowledge Base → Prompt → ElevenLabs Agent → Database Storage
  */
-
-import { KvCache } from '@liquidmetal-ai/raindrop-framework';
 import { AgentRepository } from '../repositories/agent.repository';
 import {
   createConversationalAgent,
@@ -27,13 +25,10 @@ import {
   generateOutline, 
   generateSlides 
 } from '../services/course-generation.service';
-import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
+import { NotFoundError, ValidationError } from '../utils/errors';
 import { Course } from '../models/course.model';
 import { Slide } from '../models/slide.model';
 import { Env } from '../utils/raindrop.gen';
-import { length } from 'zod';
-import agent from '../agent';
-import sampleoutline from '../sample-data.json';
 
 /**
  * Result type for agent creation workflow
@@ -185,258 +180,6 @@ async function updateCourseAgentViaAPI(
  * @param courseServiceUrl - Base URL for the Course service API
  * @returns Agent creation result
  */
-// export async function executeAgentCreationWorkflow(
-//   courseId: string,
-//   teacherId: string,
-//   voiceId: string | undefined,
-//   c: Env
-//   // kvCache: KvCache,
-//   // elevenLabsApiKey: string,
-//   // courseServiceUrl: string
-// ): Promise<AgentCreationResult> {
-//   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-//   console.log(`🚀 AGENT CREATION WORKFLOW STARTED`);
-//   console.log(`   Course ID: ${courseId}`);
-//   console.log(`   Teacher ID: ${teacherId}`);
-//   console.log(`   Voice ID: ${voiceId || 'auto-select'}`);
-//   console.log(`   Course Service: ${c.COURSE_SERVICE_URL}`);
-//   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-//   // Initialize ElevenLabs client
-//   initializeElevenLabsClient(c.ELEVENLABS_API_KEY);
-//   const agentRepo = new AgentRepository(c.KV_CACHE);
-//   let slidesWereGenerated = false;
-
-//   try {
-//     // ────────────────────────────────────────────────────────────
-//     // STEP 1: Validate course exists (via Course API)
-//     // ────────────────────────────────────────────────────────────
-//     console.log('📚 [1/10] Validating course...');
-//     const course = await fetchCourseFromAPI(courseId, c);
-//     console.log(`   ✓ Course found: "${course.title}"`);
-
-//     // ────────────────────────────────────────────────────────────
-//     // STEP 2: Check if agent already exists
-//     // ────────────────────────────────────────────────────────────
-//     console.log('🔍 [2/10] Checking for existing agent...');
-//     const existingAgent = await agentRepo.getByCourse(courseId);
-
-//     if (existingAgent && existingAgent.elevenLabsConfig.agentId) {
-//       console.log(`   ⚠️  Agent already exists!`);
-//       console.log(`   Agent ID: ${existingAgent.agentId}`);
-//       console.log(`   ElevenLabs ID: ${existingAgent.elevenLabsConfig.agentId}`);
-//       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-//       return {
-//         agentId: existingAgent.agentId,
-//         elevenLabsAgentId: existingAgent.elevenLabsConfig.agentId,
-//         status: 'exists',
-//         message: 'Agent already created for this course',
-//       };
-//     }
-//     console.log('   ✓ No existing agent found');
-
-//     // ────────────────────────────────────────────────────────────
-//     // STEP 3: Fetch or generate slides (via Course API)
-//     // ────────────────────────────────────────────────────────────
-//     console.log('📄 [3/10] Fetching slides...');
-//     let slides = await fetchSlidesFromAPI(courseId, c);
-
-//     if (!slides || slides.length === 0) {
-//       console.log('   ⚠️  No slides found - auto-generating from course content...');
-      
-//       // Check if course has necessary content for generation
-//       if (!course.knowledgeText || course.knowledgeText.trim().length === 0) {
-//         throw new ValidationError(
-//           `Cannot create agent: Course ${courseId} has no slides and no knowledge text to generate from. Please add course content first.`
-//         );
-//       }
-
-//       try {
-//         // Step 3a: Generate outline from course content
-//         console.log('   🧠 [3a/10] Generating course outline...');
-//         const outline = await generateOutline(
-//           c,
-//           course.knowledgeText,
-//           course.concepts || [],
-//           course.accessibility || 'visual',
-//           course.keywords,
-//         );
-
-//         console.log(`   ✓ Generated outline with ${outline.nodes.length} nodes`);
-
-//         // Update course with generated outline (via Course API)
-//         await updateCourseOutlineViaAPI(courseId, outline, c);
-//         console.log('   ✓ Outline saved to course');
-
-//         // Step 3b: Generate slides from outline
-//         console.log('   📝 [3b/10] Generating slides from outline...');
-//         const generatedSlides = await generateSlides(
-//           c,
-//           outline.nodes,
-//           course.accessibility || 'visual',
-//           course.knowledgeText,
-//         );
-    
-//         console.log(`   ✓ Generated ${generatedSlides.length} slides`);
-
-//         // Step 3c: Save slides to Course service
-//         console.log('   💾 [3c/10] Saving generated slides...');
-//         slides = await createSlidesViaAPI(courseId, generatedSlides, c);
-//         console.log(`   ✅ Saved ${slides.length} slides to database`);
-//         slidesWereGenerated = true;
-
-//       } catch (generationError) {
-//         console.error('   ❌ Slide generation failed:', generationError);
-//         throw new ValidationError(
-//           `Failed to auto-generate slides for course ${courseId}: ${
-//             generationError instanceof Error ? generationError.message : 'Unknown error'
-//           }`
-//         );
-//       }
-//     } else {
-//       console.log(`   ✓ Found ${slides.length} existing slides`);
-//     }
-
-//     // ────────────────────────────────────────────────────────────
-//     // STEP 4: Build knowledge base
-//     // ────────────────────────────────────────────────────────────
-//     console.log('📖 [4/10] Building knowledge base...');
-//     const knowledgeBase = buildKnowledgeBase(course, slides);
-//     console.log(`   ✓ Knowledge base built (${knowledgeBase.length} characters)`);
-
-//     // ────────────────────────────────────────────────────────────
-//     // STEP 5: Validate knowledge base quality
-//     // ────────────────────────────────────────────────────────────
-//     console.log('✔️  [5/10] Validating knowledge base quality...');
-//     const validation = validateKnowledgeBase(course, slides);
-
-//     if (!validation.isValid) {
-//       throw new ValidationError(
-//         `Knowledge base validation failed: ${validation.warnings.join(', ')}`
-//       );
-//     }
-
-//     if (validation.warnings.length > 0) {
-//       console.log('   ⚠️  Warnings:');
-//       validation.warnings.forEach((warning) => console.log(`      - ${warning}`));
-//     } else {
-//       console.log('   ✓ Knowledge base validated');
-//     }
-
-//     // ────────────────────────────────────────────────────────────
-//     // STEP 6: Generate system prompt
-//     // ────────────────────────────────────────────────────────────
-//     console.log('💭 [6/10] Generating system prompt...');
-//     const systemPrompt = buildAgentSystemPrompt(course, slides, knowledgeBase);
-//     console.log(`   ✓ System prompt generated (${systemPrompt.length} characters)`);
-
-//     // ────────────────────────────────────────────────────────────
-//     // STEP 7: Generate agent configuration
-//     // ────────────────────────────────────────────────────────────
-//     console.log('⚙️  [7/10] Preparing agent configuration...');
-//     const agentName = generateAgentName(course);
-//     const firstMessage = generateFirstMessage(course);
-
-//     // Use provided voice ID, or fall back to course voice, or auto-select
-//     const selectedVoiceId =
-//       voiceId || course.voiceId || getRecommendedVoiceId(course.accessibility || 'visual');
-
-//     console.log(`   ✓ Agent name: "${agentName}"`);
-//     console.log(`   ✓ Voice ID: ${selectedVoiceId}`);
-//     console.log(`   ✓ First message: "${firstMessage.substring(0, 50)}..."`);
-
-//     // ────────────────────────────────────────────────────────────
-//     // STEP 8: Create ElevenLabs agent via API
-//     // ────────────────────────────────────────────────────────────
-//     console.log('🎙️  [8/10] Creating ElevenLabs agent...');
-//     const elevenLabsAgent = await createConversationalAgent({
-//       name: agentName,
-//       systemPrompt,
-//       voiceId: selectedVoiceId,
-//       firstMessage,
-//       language: 'en',
-//     });
-//     // const elevenLabsAgent = { agentId: '12' };
-
-//     console.log(`   ✅ ElevenLabs agent created!`);
-//     console.log(`   Agent ID: ${elevenLabsAgent.agentId}`);
-
-//     // ────────────────────────────────────────────────────────────
-//     // STEP 9: Store agent metadata in database
-//     // ────────────────────────────────────────────────────────────
-//     console.log('💾 [9/10] Storing agent metadata...');
-//     let agentId: string;
-
-//     if (existingAgent) {
-//       // Update existing agent record with ElevenLabs ID
-//       await agentRepo.updateStatus(existingAgent.agentId, {
-//         status: 'active',
-//         elevenLabsAgentId: elevenLabsAgent.agentId,
-//       });
-//       agentId = existingAgent.agentId;
-//       console.log(`   ✓ Updated existing agent record: ${agentId}`);
-//     } else {
-//       // Create new agent record
-//       const agent = await agentRepo.create({
-//         courseId,
-//         teacherId,
-//         voiceId: selectedVoiceId,
-//         personality: {
-//           name: agentName,
-//           description: generateAgentDescription(course),
-//           tone: 'friendly',
-//           expertise: course.concepts,
-//           teachingStyle: `Optimized for ${course.accessibility} learners`,
-//           greetingMessage: firstMessage,
-//         },
-//       });
-
-//       // Update with ElevenLabs ID and set to active
-//       await agentRepo.updateStatus(agent.agentId, {
-//         status: 'active',
-//         elevenLabsAgentId: elevenLabsAgent.agentId,
-//       });
-
-//       agentId = agent.agentId;
-//       console.log(`   ✓ Created new agent record: ${agentId}`);
-//     }
-
-//     // ────────────────────────────────────────────────────────────
-//     // STEP 10: Update course with agent ID (via Course API)
-//     // ────────────────────────────────────────────────────────────
-//     console.log('📝 [10/10] Updating course record...');
-//     await updateCourseAgentViaAPI(courseId, agentId, selectedVoiceId, c);
-//     console.log(`   ✓ Course updated with agent ID`);
-
-//     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-//     console.log('✅ AGENT CREATION WORKFLOW COMPLETED');
-//     console.log(`   Internal Agent ID: ${agentId}`);
-//     console.log(`   ElevenLabs Agent ID: ${elevenLabsAgent.agentId}`);
-//     console.log(`   Course: ${course.title}`);
-//     console.log(`   Slides: ${slides.length}${slidesWereGenerated ? ' (auto-generated)' : ''}`);
-//     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-//     return {
-//       agentId,
-//       elevenLabsAgentId: elevenLabsAgent.agentId,
-//       status: 'created',
-//       message: slidesWereGenerated 
-//         ? 'Agent created successfully with auto-generated slides'
-//         : 'Agent created successfully',
-//       warnings: validation.warnings.length > 0 ? validation.warnings : undefined,
-//       generatedSlides: slidesWereGenerated,
-//     };
-//   } catch (error) {
-//     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-//     console.error('❌ AGENT CREATION WORKFLOW FAILED');
-//     console.error(`   Course ID: ${courseId}`);
-//     console.error(`   Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-//     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-//     throw error;
-//   }
-// }
-
 export async function executeAgentCreationWorkflow(
   courseId: string,
   teacherId: string,
@@ -449,10 +192,16 @@ export async function executeAgentCreationWorkflow(
   let slidesWereGenerated = false;
 
   try {
+    // ────────────────────────────────────────────────────────────
+    // STEP 1: Validate course exists (via Course API)
+    // ────────────────────────────────────────────────────────────
     console.log('📚 [1/10] Validating course...');
     const course = await fetchCourseFromAPI(courseId, c);
     console.log(`   ✓ Course found: "${course.title}"`);
 
+    // ────────────────────────────────────────────────────────────
+    // STEP 2: Check if agent already exists
+    // ────────────────────────────────────────────────────────────
     console.log('🔍 [2/10] Checking for existing agent...');
     const existingAgent = await agentRepo.getByCourse(courseId);
     
@@ -470,6 +219,10 @@ export async function executeAgentCreationWorkflow(
       };
     }
     console.log('   ✓ No existing agent found');
+
+    // ────────────────────────────────────────────────────────────
+    // STEP 3: Fetch or generate slides (via Course API)
+    // ────────────────────────────────────────────────────────────
     console.log('📄 [3/10] Fetching slides...');
     let slides = await fetchSlidesFromAPI(courseId, c);
 
@@ -483,6 +236,7 @@ export async function executeAgentCreationWorkflow(
         );
       }
 
+      console.log('   🧠 [3a/10] Generating course outline...');
       const outline = course.outline
         ? course.outline
         : await generateOutline(
@@ -492,13 +246,11 @@ export async function executeAgentCreationWorkflow(
           course.accessibility || 'visual',
           course.keywords,
         );
-
       console.log(`   ✓ Generated outline with ${outline.nodes.length} nodes`);
       await updateCourseOutlineViaAPI(courseId, outline, c);
       c.logger.info('   ✓ Outline saved to course');
       
       console.log('   📝 [3b/10] Generating slides from outline...');
-      
       const generatedSlides = await generateSlides(
           c,
           outline.nodes,
@@ -515,10 +267,122 @@ export async function executeAgentCreationWorkflow(
       console.log(`   ✓ Found ${slides.length} existing slides`);
     }
 
+    // ────────────────────────────────────────────────────────────
+    // STEP 4: Build knowledge base
+    // ────────────────────────────────────────────────────────────
+    console.log('📖 [4/10] Building knowledge base...');
+    const knowledgeBase = buildKnowledgeBase(course, slides);
+    console.log(`   ✓ Knowledge base built (${knowledgeBase.length} characters)`);
 
-    const agentId = "agentId";
-    const elevenLabsAgent = {agentId: agentId};
-    const validation = {warnings: []};
+    // ────────────────────────────────────────────────────────────
+    // STEP 5: Validate knowledge base quality
+    // ────────────────────────────────────────────────────────────
+    console.log('✔️  [5/10] Validating knowledge base quality...');
+    const validation = validateKnowledgeBase(course, slides);
+
+    if (!validation.isValid) {
+      throw new ValidationError(
+        `Knowledge base validation failed: ${validation.warnings.join(', ')}`
+      );
+    }
+    if (validation.warnings.length > 0) {
+      console.log('   ⚠️  Warnings:');
+      validation.warnings.forEach((warning) => console.log(`      - ${warning}`));
+    } else {
+      console.log('   ✓ Knowledge base validated');
+    }
+
+    // ────────────────────────────────────────────────────────────
+    // STEP 6: Generate system prompt
+    // ────────────────────────────────────────────────────────────
+    console.log('💭 [6/10] Generating system prompt...');
+    const systemPrompt = buildAgentSystemPrompt(course, slides, knowledgeBase);
+    console.log(`   ✓ System prompt generated (${systemPrompt.length} characters)`);
+
+    // ────────────────────────────────────────────────────────────
+    // STEP 7: Generate agent configuration
+    // ────────────────────────────────────────────────────────────
+    console.log('⚙️  [7/10] Preparing agent configuration...');
+    const agentName = generateAgentName(course);
+    const firstMessage = generateFirstMessage(course);
+
+    const selectedVoiceId =
+      voiceId || course.voiceId || getRecommendedVoiceId(course.accessibility || 'visual');
+
+    console.log(`   ✓ Agent name: "${agentName}"`);
+    console.log(`   ✓ Voice ID: ${selectedVoiceId}`);
+    console.log(`   ✓ First message: "${firstMessage.substring(0, 50)}..."`);
+
+    // ────────────────────────────────────────────────────────────
+    // STEP 8: Create ElevenLabs agent via API
+    // ────────────────────────────────────────────────────────────
+    console.log('🎙️  [8/10] Creating ElevenLabs agent...');
+    const elevenLabsAgent = await createConversationalAgent({
+      name: agentName,
+      systemPrompt,
+      voiceId: selectedVoiceId,
+      firstMessage,
+      language: 'en',
+    });
+
+    console.log(`   ✅ ElevenLabs agent created!`);
+    console.log(`   Agent ID: ${elevenLabsAgent.agentId}`);
+
+    // ────────────────────────────────────────────────────────────
+    // STEP 9: Store agent metadata in database
+    // ────────────────────────────────────────────────────────────
+    console.log('💾 [9/10] Storing agent metadata...');
+    let agentId: string;
+
+    if (existingAgent) {
+      // Update existing agent record with ElevenLabs ID
+      await agentRepo.updateStatus(existingAgent.agentId, {
+        status: 'active',
+        elevenLabsAgentId: elevenLabsAgent.agentId,
+      });
+      agentId = existingAgent.agentId;
+      console.log(`   ✓ Updated existing agent record: ${agentId}`);
+    } else {
+      // Create new agent record
+      const agent = await agentRepo.create({
+        courseId,
+        teacherId,
+        voiceId: selectedVoiceId,
+        personality: {
+          name: agentName,
+          description: generateAgentDescription(course),
+          tone: 'friendly',
+          expertise: course.concepts,
+          teachingStyle: `Optimized for ${course.accessibility} learners`,
+          greetingMessage: firstMessage,
+        },
+      });
+
+      // Update with ElevenLabs ID and set to active
+      await agentRepo.updateStatus(agent.agentId, {
+        status: 'active',
+        elevenLabsAgentId: elevenLabsAgent.agentId,
+      });
+
+      agentId = agent.agentId;
+      console.log(`   ✓ Created new agent record: ${agentId}`);
+    }
+
+    // ────────────────────────────────────────────────────────────
+    // STEP 10: Update course with agent ID (via Course API)
+    // ────────────────────────────────────────────────────────────
+    console.log('📝 [10/10] Updating course record...');
+    await updateCourseAgentViaAPI(courseId, agentId, selectedVoiceId, c);
+    console.log(`   ✓ Course updated with agent ID`);
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ AGENT CREATION WORKFLOW COMPLETED');
+    console.log(`   Internal Agent ID: ${agentId}`);
+    console.log(`   ElevenLabs Agent ID: ${elevenLabsAgent.agentId}`);
+    console.log(`   Course: ${course.title}`);
+    console.log(`   Slides: ${slides.length}${slidesWereGenerated ? ' (auto-generated)' : ''}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     return {
       agentId,
       elevenLabsAgentId: elevenLabsAgent.agentId,
@@ -529,7 +393,6 @@ export async function executeAgentCreationWorkflow(
       warnings: validation.warnings.length > 0 ? validation.warnings : undefined,
       generatedSlides: slidesWereGenerated,
     };
-  
   } catch(error) {
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.error('❌ AGENT CREATION WORKFLOW FAILED');
@@ -557,9 +420,6 @@ export async function executeAgentCreationWorkflow(
  */
 export async function refreshAgentKnowledgeWorkflow(
   courseId: string,
-  // kvCache: KvCache,
-  // elevenLabsApiKey: string,
-  // courseServiceUrl: string,
   c: Env
 ): Promise<void> {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -641,9 +501,6 @@ export async function refreshAgentKnowledgeWorkflow(
  */
 export async function deleteAgentWorkflow(
   agentId: string,
-  // kvCache: KvCache,
-  // elevenLabsApiKey: string,
-  // courseServiceUrl: string,
   c: Env
 ): Promise<void> {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -718,43 +575,35 @@ export async function deleteAgentWorkflow(
  * @param anthropicApiKey - Anthropic API key for slide generation
  * @param courseServiceUrl - Base URL for the Course service API
  */
-// export async function recreateAgentWorkflow(
-//   courseId: string,
-//   teacherId: string,
-//   voiceId: string | undefined,
-//   // kvCache: KvCache,
-//   // elevenLabsApiKey: string,
-//   // anthropicApiKey: string,
-//   // courseServiceUrl: string
-//   c: Env
-// ): Promise<AgentCreationResult> {
-//   console.log('🔄 Recreating agent for course:', courseId);
+export async function recreateAgentWorkflow(
+  courseId: string,
+  teacherId: string,
+  voiceId: string | undefined,
+  c: Env
+): Promise<AgentCreationResult> {
+  console.log('🔄 Recreating agent for course:', courseId);
 
-//   const agentRepo = new AgentRepository(c.KV_CACHE);
+  const agentRepo = new AgentRepository(c.KV_CACHE);
 
-//   try {
-//     // Find and delete old agent
-//     const existingAgent = await agentRepo.getByCourse(courseId);
+  try {
+    // Find and delete old agent
+    const existingAgent = await agentRepo.getByCourse(courseId);
 
-//     if (existingAgent) {
-//       console.log(`   Deleting old agent: ${existingAgent.agentId}`);
-//       await deleteAgentWorkflow(existingAgent.agentId, c);
-//     }
+    if (existingAgent) {
+      console.log(`   Deleting old agent: ${existingAgent.agentId}`);
+      await deleteAgentWorkflow(existingAgent.agentId, c);
+    }
 
-//     // Create new agent
-//     console.log('   Creating new agent...');
-//     return await executeAgentCreationWorkflow(
-//       courseId, 
-//       teacherId, 
-//       voiceId, 
-//       // kvCache, 
-//       // elevenLabsApiKey,
-//       // anthropicApiKey,
-//       // courseServiceUrl
-//       c
-//     );
-//   } catch (error) {
-//     console.error('❌ Recreate workflow failed:', error);
-//     throw error;
-//   }
-// }
+    // Create new agent
+    console.log('   Creating new agent...');
+    return await executeAgentCreationWorkflow(
+      courseId, 
+      teacherId, 
+      voiceId, 
+      c
+    );
+  } catch (error) {
+    console.error('❌ Recreate workflow failed:', error);
+    throw error;
+  }
+}
