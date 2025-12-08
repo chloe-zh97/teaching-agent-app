@@ -61,68 +61,6 @@ app.post('/api/agents', async (c) => {
 });
 
 /**
- * POST /api/courses/:courseId/agent
- * Create agent for a course WITH FULL ELEVENLABS INTEGRATION
- * This triggers the complete workflow: KB generation → prompt → ElevenLabs API → store
- */
-// app.post('/api/courses/:courseId/agent', async (c) => {
-//   try {
-//     const courseId = c.req.param('courseId');
-//     const { voiceId, teacherId, recreate } = await c.req.json();
-
-//     if (!teacherId) {
-//       return c.json({ error: 'teacherId is required' }, 400);
-//     }
-
-//     c.env.logger.debug(`api key: ${c.env.ELEVENLABS_API_KEY}`);
-
-//     if (!c.env.ELEVENLABS_API_KEY) {
-//       return c.json({
-//         error: 'ElevenLabs API key not configured',
-//         message: 'Set ELEVENLABS_API_KEY in Cloudflare Workers environment variables',
-//       }, 500);
-//     }
-
-//     c.env.logger.debug(`🎙️  Creating agent for course ${courseId} (teacherId: ${teacherId})`);
-
-//     // Import workflow
-//     const {
-//       executeAgentCreationWorkflow,
-//       recreateAgentWorkflow,
-//     } = await import('../workflows/agent.workflow');
-
-//     // Execute workflow (recreate if requested)
-//     const result = recreate
-//       ? await recreateAgentWorkflow(courseId, teacherId, voiceId, c.env.KV_CACHE, c.env.ELEVENLABS_API_KEY)
-//       : await executeAgentCreationWorkflow(courseId, teacherId, voiceId, c.env.KV_CACHE, c.env.ELEVENLABS_API_KEY);
-
-//     return c.json({
-//       success: true,
-//       message: result.message,
-//       agentId: result.agentId,
-//       elevenLabsAgentId: result.elevenLabsAgentId,
-//       status: result.status,
-//       warnings: result.warnings,
-//     }, result.status === 'created' ? 201 : 200);
-//   } catch (error) {
-//     if (error instanceof ConflictError) {
-//       return c.json({ error: error.message }, 409);
-//     }
-//     if (error instanceof NotFoundError) {
-//       return c.json({ error: error.message }, 404);
-//     }
-//     if (error instanceof ValidationError) {
-//       return c.json({ error: error.message }, 400);
-//     }
-//     console.error('❌ Agent creation failed:', error);
-//     return c.json({
-//       error: 'Failed to create agent',
-//       message: error instanceof Error ? error.message : 'Unknown error',
-//     }, 500);
-//   }
-// });
-
-/**
  * GET /api/agents/:id
  * Get agent by ID
  */
@@ -336,8 +274,9 @@ app.post('/api/agents/:id/refresh-knowledge', async (c) => {
 
     await refreshAgentKnowledgeWorkflow(
       agent.courseId,
-      c.env.KV_CACHE,
-      c.env.ELEVENLABS_API_KEY
+      // c.env.KV_CACHE,
+      // c.env.ELEVENLABS_API_KEY,
+      c.env
     );
 
     // Get updated agent
@@ -432,8 +371,7 @@ app.delete('/api/agents/:id', async (c) => {
 
     // Import and execute delete workflow
     const { deleteAgentWorkflow } = await import('../workflows/agent.workflow');
-
-    await deleteAgentWorkflow(agentId, c.env.KV_CACHE, c.env.ELEVENLABS_API_KEY);
+    await deleteAgentWorkflow(agentId, c.env);
 
     return c.json({
       success: true,

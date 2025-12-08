@@ -1,16 +1,18 @@
 // src/services/course-generation.service.ts
 import { OutlineNode, OutlineStructure, AccessibilityMode } from '../models/course.model';
 import { Slide } from '../models/slide.model';
+import { Env } from '../utils/raindrop.gen';
 import { buildCourseOutlinePrompt, buildCourseSlidePrompt } from './prompt.templates';
 
 /**
  * Generate course outline from knowledge text using Claude API
  */
 export async function generateOutline(
+  c: Env,
   knowledgeText: string,
   concepts: string[],
   accessibility: AccessibilityMode,
-  keywords?: string[]
+  keywords?: string[],
 ): Promise<OutlineStructure> {
   
   const prompt = buildCourseOutlinePrompt(
@@ -20,14 +22,15 @@ export async function generateOutline(
     keywords
   );
 
+  c.logger.info(`Generate outline prompt: ${prompt}`);
+
   try {
     // Call Claude API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        //'x-api-key': c.env.ANTHROPIC_API_KEY,
-        //'x-api-key': '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',
+        'x-api-key': c.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -43,6 +46,7 @@ export async function generateOutline(
     });
 
     if (!response.ok) {
+      console.log(`Claude API error: ${response.statusText}`);
       throw new Error(`Claude API error: ${response.statusText}`);
     }
 
@@ -71,6 +75,7 @@ export async function generateOutline(
  * Generate slides from outline using Claude API
  */
 export async function generateSlides(
+  c: Env,
   outline: OutlineNode[],
   accessibility: AccessibilityMode,
   courseContext: string
@@ -88,6 +93,7 @@ export async function generateSlides(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-api-key': c.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({

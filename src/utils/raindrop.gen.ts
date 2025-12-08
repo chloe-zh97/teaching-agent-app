@@ -13,4 +13,6 @@ export interface Env {
   tracer: Tracer;
   ELEVENLABS_API_KEY: string; // ElevenLabs API key for conversational AI
   ANTHROPIC_API_KEY: string;
+
+  COURSE_SERVICE_URL: string;
 }

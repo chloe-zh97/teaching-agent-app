@@ -6,7 +6,7 @@
 application "teaching-agent-app" {
 
   service "user" {
-    visibility = "public"
+    visibility = "private"
   }
 
   service "course" {
@@ -14,23 +14,23 @@ application "teaching-agent-app" {
   }
 
   service "slide" {
-    visibility = "public"
+    visibility = "private"
   }
 
   service "session" {
-    visibility = "public"
+    visibility = "private"
   }
 
   service "interaction" {
-    visibility = "public"
+    visibility = "private"
   }
 
   service "agent" {
-    visibility = "public"
+    visibility = "private"
   }
 
   service "transcription" {
-    visibility = "public"
+    visibility = "private"
   }
 
   kv_cache "kv_cache" {}
@@ -44,5 +44,4 @@ application "teaching-agent-app" {
   }
 
   env "COURSE_SERVICE_URL" {}
-  env "SLIDE_SERVICE_URL" {}
 }

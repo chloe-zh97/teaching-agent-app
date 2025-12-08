@@ -7,8 +7,6 @@
  */
 
 import { KvCache } from '@liquidmetal-ai/raindrop-framework';
-import { CourseRepository } from '../repositories/course.repository';
-import { SlideRepository } from '../repositories/slide.repository';
 import { AgentRepository } from '../repositories/agent.repository';
 import {
   createConversationalAgent,
@@ -25,8 +23,14 @@ import {
   getRecommendedVoiceId,
   generateAgentDescription,
 } from '../services/prompt.templates';
-import { generateOutline, generateSlides } from '../services/course-generation.service';
+import { 
+  generateOutline, 
+  generateSlides 
+} from '../services/course-generation.service';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
+import { Course } from '../models/course.model';
+import { Slide } from '../models/slide.model';
+import { Env } from '../utils/raindrop.gen';
 
 /**
  * Result type for agent creation workflow
@@ -37,8 +41,122 @@ export interface AgentCreationResult {
   status: 'created' | 'exists';
   message: string;
   warnings?: string[];
-  slidesGenerated?: boolean;
-  outlineGenerated?: boolean;
+  generatedSlides?: boolean;
+}
+
+/**
+ * Fetch course from Course API
+ */
+async function fetchCourseFromAPI(courseId: string, c: Env): Promise<Course> {
+  const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseId}`);
+  
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new NotFoundError(`Course ${courseId} not found!`);
+    }
+    throw new Error(`Failed to fetch course: ${response.statusText}`);
+  }
+  
+  const data = await response.json() as any;
+  return data.data; // Assuming response format: { success: true, data: Course }
+}
+
+/**
+ * Fetch slides from Course API
+ */
+async function fetchSlidesFromAPI(courseId: string, c: Env): Promise<Slide[]> {
+  //console.log(`fetch slides from api: ${c.COURSE_SERVICE_URL}`);
+  //const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseId}/slides`);
+  const slideServiceUrl = "http://svc-01kby5q2y1m2a8yg5g7mygmne3.01karqzwhx6azztkab3ppk0vq6.lmapp.run";
+  const response = await fetch(`${slideServiceUrl}/api/courses/${courseId}/slides`);
+  
+  console.log("Fetch slide from api done..");
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch slides: ${response.statusText}`);
+  }
+  
+  const data = await response.json() as any;
+  return data.data || []; // Assuming response format: { success: true, data: Slide[] }
+}
+
+/**
+ * Create slides via Course API
+ */
+async function createSlidesViaAPI(
+  courseId: string, 
+  slides: Slide[], 
+  c: Env
+): Promise<Slide[]> {
+  const createdSlides: Slide[] = [];
+  
+  for (const slideData of slides) {
+    const response = await fetch(`${c.COURSE_SERVICE_URL}/api/slides`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...slideData,
+        courseId: courseId,
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create slide: ${response.statusText}`);
+    }
+    
+    const result = await response.json() as any;
+    createdSlides.push(result.data);
+  }
+  
+  return createdSlides;
+}
+
+/**
+ * Update course outline via Course API
+ */
+async function updateCourseOutlineViaAPI(
+  courseId: string,
+  outline: any,
+  c: Env
+): Promise<void> {
+  const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseId}/outline`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ outline }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to update course outline: ${response.statusText}`);
+  }
+}
+
+/**
+ * Update course agent info via Course API
+ */
+async function updateCourseAgentViaAPI(
+  courseId: string,
+  agentId: string,
+  voiceId: string,
+  c: Env
+): Promise<void> {
+  const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseId}/agent`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ 
+      agentId,
+      voiceId,
+    }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to update course with agent info: ${response.statusText}`);
+  }
 }
 
 /**
@@ -47,15 +165,15 @@ export interface AgentCreationResult {
  * This is the MAIN workflow that creates a complete ElevenLabs agent:
  *
  * Steps:
- * 1. ✅ Validate course exists and has slides
+ * 1. ✅ Validate course exists and has slides (via Course API)
  * 2. ✅ Check if agent already exists (avoid duplicates)
- * 3. ✅ Fetch all slides for the course (AUTO-GENERATE if missing)
+ * 3. ✅ Fetch all slides for the course (AUTO-GENERATE if missing via Course API)
  * 4. ✅ Build knowledge base from slides and course content
  * 5. ✅ Validate knowledge base quality
  * 6. ✅ Generate system prompt with teaching strategies
  * 7. ✅ Create ElevenLabs agent via API
  * 8. ✅ Store agent metadata in KV database
- * 9. ✅ Update course record with agent ID
+ * 9. ✅ Update course record with agent ID (via Course API)
  * 10. ✅ Return result with warnings (if any)
  *
  * @param courseId - Course ID to create agent for
@@ -63,40 +181,38 @@ export interface AgentCreationResult {
  * @param voiceId - Optional ElevenLabs voice ID (uses recommendation if not provided)
  * @param kvCache - Cloudflare KV namespace
  * @param elevenLabsApiKey - ElevenLabs API key from environment
+ * @param anthropicApiKey - Anthropic API key for slide generation
+ * @param courseServiceUrl - Base URL for the Course service API
  * @returns Agent creation result
  */
 export async function executeAgentCreationWorkflow(
   courseId: string,
   teacherId: string,
   voiceId: string | undefined,
-  kvCache: KvCache,
-  elevenLabsApiKey: string,
+  c: Env
+  // kvCache: KvCache,
+  // elevenLabsApiKey: string,
+  // courseServiceUrl: string
 ): Promise<AgentCreationResult> {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`🚀 AGENT CREATION WORKFLOW STARTED`);
   console.log(`   Course ID: ${courseId}`);
   console.log(`   Teacher ID: ${teacherId}`);
   console.log(`   Voice ID: ${voiceId || 'auto-select'}`);
+  console.log(`   Course Service: ${c.COURSE_SERVICE_URL}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-  initializeElevenLabsClient(elevenLabsApiKey);
-
-  const courseRepo = new CourseRepository(kvCache);
-  const slideRepo = new SlideRepository(kvCache);
-  const agentRepo = new AgentRepository(kvCache);
-
-  let outlineGenerated = false;
-  let slidesGenerated = false;
+  // Initialize ElevenLabs client
+  initializeElevenLabsClient(c.ELEVENLABS_API_KEY);
+  const agentRepo = new AgentRepository(c.KV_CACHE);
+  let slidesWereGenerated = false;
 
   try {
     // ────────────────────────────────────────────────────────────
-    // STEP 1: Validate course exists
+    // STEP 1: Validate course exists (via Course API)
     // ────────────────────────────────────────────────────────────
     console.log('📚 [1/10] Validating course...');
-    const course = await courseRepo.getById(courseId);
-    if (!course) {
-      throw new NotFoundError(`Course ${courseId} not found`);
-    }
+    const course = await fetchCourseFromAPI(courseId, c);
     console.log(`   ✓ Course found: "${course.title}"`);
 
     // ────────────────────────────────────────────────────────────
@@ -121,92 +237,59 @@ export async function executeAgentCreationWorkflow(
     console.log('   ✓ No existing agent found');
 
     // ────────────────────────────────────────────────────────────
-    // STEP 3: Fetch all slides (AUTO-GENERATE if missing)
+    // STEP 3: Fetch or generate slides (via Course API)
     // ────────────────────────────────────────────────────────────
     console.log('📄 [3/10] Fetching slides...');
-    let slides = await slideRepo.listByCourse(courseId);
+    let slides = await fetchSlidesFromAPI(courseId, c);
 
-    // AUTO-GENERATE slides if none exist
     if (!slides || slides.length === 0) {
-      console.log('   ⚠️  No slides found - initiating auto-generation...');
-
-      // Check if course has outline
-      if (!course.outline || !course.outline.nodes || course.outline.nodes.length === 0) {
-        console.log('   📋 Generating outline first...');
-        
-        // Validate course has required data for outline generation
-        if (!course.knowledgeText || course.knowledgeText.trim().length === 0) {
-          throw new ValidationError(
-            'Cannot generate slides: Course has no knowledge text. Please add course content first.'
-          );
-        }
-
-        // Generate outline using Claude AI
-        try {
-          const outline = await generateOutline(
-            course.knowledgeText,
-            course.concepts || [],
-            course.accessibility || 'visual',
-            course.keywords
-          );
-
-          // Update course with generated outline
-          await courseRepo.updateOutline(courseId, {outline});
-
-          console.log(`   ✅ Outline generated with ${outline.nodes.length} nodes`);
-          outlineGenerated = true;
-
-          // Update course object with new outline
-          course.outline = outline;
-        } catch (error) {
-          console.error('   ❌ Failed to generate outline:', error);
-          throw new ValidationError(
-            `Failed to generate course outline: ${error instanceof Error ? error.message : 'Unknown error'}`
-          );
-        }
-      } else {
-        console.log(`   ✓ Using existing outline (${course.outline.nodes.length} nodes)`);
+      console.log('   ⚠️  No slides found - auto-generating from course content...');
+      
+      // Check if course has necessary content for generation
+      if (!course.knowledgeText || course.knowledgeText.trim().length === 0) {
+        throw new ValidationError(
+          `Cannot create agent: Course ${courseId} has no slides and no knowledge text to generate from. Please add course content first.`
+        );
       }
 
-      // Generate slides from outline
-      console.log('   🎨 Generating slides from outline...');
       try {
-        const generatedSlides = await generateSlides(
-          course.outline.nodes,
+        // Step 3a: Generate outline from course content
+        console.log('   🧠 [3a/10] Generating course outline...');
+        const outline = await generateOutline(
+          c,
+          course.knowledgeText,
+          course.concepts || [],
           course.accessibility || 'visual',
-          course.knowledgeText || ''
+          course.keywords,
         );
+        console.log(`   ✓ Generated outline with ${outline.nodes.length} nodes`);
 
-        // Save generated slides to database
-        console.log(`   💾 Saving ${generatedSlides.length} generated slides...`);
-        const savedSlides = [];
-        for (const slideData of generatedSlides) {
-          const slide = await slideRepo.create({
-            courseId,
-            title: slideData.title,
-            content: slideData.content,
-            speakerNotes: slideData.speakerNotes,
-            outlineNodeId: slideData.outlineNodeId,
-            order: slideData.order,
-            accessibilityMode: slideData.accessibilityMode,
-            visualAids: slideData.visualAids,
-            audioNarration: slideData.audioNarration,
-            layout: slideData.layout,
-            theme: slideData.theme,
-            backgroundColor: slideData.backgroundColor,
-            generatedBy: 'ai',
-            aiPrompt: slideData.aiPrompt,
-          });
-          savedSlides.push(slide);
-        }
+        // Update course with generated outline (via Course API)
+        await updateCourseOutlineViaAPI(courseId, outline, c);
+        console.log('   ✓ Outline saved to course');
 
-        slides = savedSlides;
-        slidesGenerated = true;
-        console.log(`   ✅ Generated and saved ${slides.length} slides`);
-      } catch (error) {
-        console.error('   ❌ Failed to generate slides:', error);
+        // Step 3b: Generate slides from outline
+        console.log('   📝 [3b/10] Generating slides from outline...');
+        const generatedSlides = await generateSlides(
+          c,
+          outline.nodes,
+          course.accessibility || 'visual',
+          course.knowledgeText,
+        );
+        console.log(`   ✓ Generated ${generatedSlides.length} slides`);
+
+        // Step 3c: Save slides to Course service
+        console.log('   💾 [3c/10] Saving generated slides...');
+        slides = await createSlidesViaAPI(courseId, generatedSlides, c);
+        console.log(`   ✅ Saved ${slides.length} slides to database`);
+        slidesWereGenerated = true;
+
+      } catch (generationError) {
+        console.error('   ❌ Slide generation failed:', generationError);
         throw new ValidationError(
-          `Failed to generate slides: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Failed to auto-generate slides for course ${courseId}: ${
+            generationError instanceof Error ? generationError.message : 'Unknown error'
+          }`
         );
       }
     } else {
@@ -317,13 +400,10 @@ export async function executeAgentCreationWorkflow(
     }
 
     // ────────────────────────────────────────────────────────────
-    // STEP 10: Update course with agent ID
+    // STEP 10: Update course with agent ID (via Course API)
     // ────────────────────────────────────────────────────────────
     console.log('📝 [10/10] Updating course record...');
-    await courseRepo.updateAgent(courseId, {
-      agentId,
-      voiceId: selectedVoiceId,
-    });
+    await updateCourseAgentViaAPI(courseId, agentId, selectedVoiceId, c);
     console.log(`   ✓ Course updated with agent ID`);
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -331,21 +411,18 @@ export async function executeAgentCreationWorkflow(
     console.log(`   Internal Agent ID: ${agentId}`);
     console.log(`   ElevenLabs Agent ID: ${elevenLabsAgent.agentId}`);
     console.log(`   Course: ${course.title}`);
-    console.log(`   Slides: ${slides.length}`);
-    if (outlineGenerated) console.log(`   📋 Auto-generated outline`);
-    if (slidesGenerated) console.log(`   🎨 Auto-generated slides`);
+    console.log(`   Slides: ${slides.length}${slidesWereGenerated ? ' (auto-generated)' : ''}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     return {
       agentId,
       elevenLabsAgentId: elevenLabsAgent.agentId,
       status: 'created',
-      message: slidesGenerated 
+      message: slidesWereGenerated 
         ? 'Agent created successfully with auto-generated slides'
         : 'Agent created successfully',
       warnings: validation.warnings.length > 0 ? validation.warnings : undefined,
-      slidesGenerated,
-      outlineGenerated,
+      generatedSlides: slidesWereGenerated,
     };
   } catch (error) {
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -370,30 +447,28 @@ export async function executeAgentCreationWorkflow(
  * @param courseId - Course ID
  * @param kvCache - Cloudflare KV namespace
  * @param elevenLabsApiKey - ElevenLabs API key
+ * @param courseServiceUrl - Base URL for the Course service API
  */
 export async function refreshAgentKnowledgeWorkflow(
   courseId: string,
-  kvCache: KvCache,
-  elevenLabsApiKey: string
+  // kvCache: KvCache,
+  // elevenLabsApiKey: string,
+  // courseServiceUrl: string,
+  c: Env
 ): Promise<void> {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`🔄 AGENT KNOWLEDGE REFRESH WORKFLOW STARTED`);
   console.log(`   Course ID: ${courseId}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-  initializeElevenLabsClient(elevenLabsApiKey);
+  initializeElevenLabsClient(c.ELEVENLABS_API_KEY);
 
-  const courseRepo = new CourseRepository(kvCache);
-  const slideRepo = new SlideRepository(kvCache);
-  const agentRepo = new AgentRepository(kvCache);
+  const agentRepo = new AgentRepository(c.KV_CACHE);
 
   try {
-    // Get course
+    // Get course (via Course API)
     console.log('📚 [1/5] Fetching course...');
-    const course = await courseRepo.getById(courseId);
-    if (!course) {
-      throw new NotFoundError(`Course ${courseId} not found`);
-    }
+    const course = await fetchCourseFromAPI(courseId, c);
     console.log(`   ✓ Course: "${course.title}"`);
 
     // Get agent
@@ -407,9 +482,9 @@ export async function refreshAgentKnowledgeWorkflow(
     console.log(`   ✓ Agent ID: ${agent.agentId}`);
     console.log(`   ✓ ElevenLabs ID: ${agent.elevenLabsConfig.agentId}`);
 
-    // Get updated slides
+    // Get updated slides (via Course API)
     console.log('📄 [3/5] Fetching updated slides...');
-    const slides = await slideRepo.listByCourse(courseId);
+    const slides = await fetchSlidesFromAPI(courseId, c);
     if (!slides || slides.length === 0) {
       throw new ValidationError(`No slides found for course ${courseId}`);
     }
@@ -451,26 +526,28 @@ export async function refreshAgentKnowledgeWorkflow(
  * This will:
  * 1. Delete the agent from ElevenLabs
  * 2. Delete the agent record from database
- * 3. Update the course to remove agent reference
+ * 3. Update the course to remove agent reference (via Course API)
  *
  * @param agentId - Internal agent ID
  * @param kvCache - Cloudflare KV namespace
  * @param elevenLabsApiKey - ElevenLabs API key
+ * @param courseServiceUrl - Base URL for the Course service API
  */
 export async function deleteAgentWorkflow(
   agentId: string,
-  kvCache: KvCache,
-  elevenLabsApiKey: string
+  // kvCache: KvCache,
+  // elevenLabsApiKey: string,
+  // courseServiceUrl: string,
+  c: Env
 ): Promise<void> {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`🗑️  AGENT DELETION WORKFLOW STARTED`);
   console.log(`   Agent ID: ${agentId}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-  initializeElevenLabsClient(elevenLabsApiKey);
+  initializeElevenLabsClient(c.ELEVENLABS_API_KEY);
 
-  const agentRepo = new AgentRepository(kvCache);
-  const courseRepo = new CourseRepository(kvCache);
+  const agentRepo = new AgentRepository(c.KV_CACHE);
 
   try {
     // Get agent
@@ -495,14 +572,15 @@ export async function deleteAgentWorkflow(
     await agentRepo.delete(agentId);
     console.log(`   ✅ Deleted from database`);
 
-    // Update course to remove agent reference
-    const course = await courseRepo.getById(agent.courseId);
-    if (course && course.agentId === agentId) {
-      await courseRepo.updateAgent(agent.courseId, {
-        agentId: undefined,
-        voiceId: course.voiceId,
-      });
-      console.log(`   ✅ Removed agent reference from course`);
+    // Update course to remove agent reference (via Course API)
+    try {
+      const course = await fetchCourseFromAPI(agent.courseId, c);
+      if (course && course.agentId === agentId) {
+        await updateCourseAgentViaAPI(agent.courseId, '', course.voiceId || '', c);
+        console.log(`   ✅ Removed agent reference from course`);
+      }
+    } catch (error) {
+      console.log(`   ⚠️  Could not update course (may have been deleted)`);
     }
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -531,19 +609,22 @@ export async function deleteAgentWorkflow(
  * @param voiceId - Optional new voice ID
  * @param kvCache - Cloudflare KV namespace
  * @param elevenLabsApiKey - ElevenLabs API key
+ * @param anthropicApiKey - Anthropic API key for slide generation
+ * @param courseServiceUrl - Base URL for the Course service API
  */
 export async function recreateAgentWorkflow(
   courseId: string,
   teacherId: string,
   voiceId: string | undefined,
-  kvCache: KvCache,
-  elevenLabsApiKey: string,
+  // kvCache: KvCache,
+  // elevenLabsApiKey: string,
   // anthropicApiKey: string,
-  // courseServiceUrl: string,
+  // courseServiceUrl: string
+  c: Env
 ): Promise<AgentCreationResult> {
   console.log('🔄 Recreating agent for course:', courseId);
 
-  const agentRepo = new AgentRepository(kvCache);
+  const agentRepo = new AgentRepository(c.KV_CACHE);
 
   try {
     // Find and delete old agent
@@ -551,12 +632,21 @@ export async function recreateAgentWorkflow(
 
     if (existingAgent) {
       console.log(`   Deleting old agent: ${existingAgent.agentId}`);
-      await deleteAgentWorkflow(existingAgent.agentId, kvCache, elevenLabsApiKey);
+      await deleteAgentWorkflow(existingAgent.agentId, c);
     }
 
     // Create new agent
     console.log('   Creating new agent...');
-    return await executeAgentCreationWorkflow(courseId, teacherId, voiceId, kvCache, elevenLabsApiKey);
+    return await executeAgentCreationWorkflow(
+      courseId, 
+      teacherId, 
+      voiceId, 
+      // kvCache, 
+      // elevenLabsApiKey,
+      // anthropicApiKey,
+      // courseServiceUrl
+      c
+    );
   } catch (error) {
     console.error('❌ Recreate workflow failed:', error);
     throw error;

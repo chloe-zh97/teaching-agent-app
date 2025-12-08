@@ -88,7 +88,7 @@ export class CourseRepository {
     const courseData = await this.kv.get(courseKey);
 
     if (!courseData) {
-      throw new NotFoundError(`Course with ID ${courseId} not found!`);
+      throw new NotFoundError(`Course with ID ${courseId} not found`);
     }
 
     return JSON.parse(courseData) as Course;
