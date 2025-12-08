@@ -1,5 +1,5 @@
 {
-    "outline": {
+    "sampleoutline": {
             "nodes": [
                 {
                     "id": "node_1",
@@ -7,7 +7,7 @@
                     "description": "Comprehensive overview of machine learning as a core discipline in artificial intelligence. Explores how systems can learn and adapt from data-driven approaches.",
                     "level": 1,
                     "order": 0,
-                    "estimatedDuration": 30,
+                    "estimatedDuration": 20,
                     "children": [
                         {
                             "id": "node_1_1",
@@ -105,5 +105,30 @@
             "mermaidCode": "graph TD\n    A[Machine Learning] --> B[Learning Paradigms]\n    A --> C[Optimization Techniques]\n    B --> D[Supervised Learning]\n    B --> E[Unsupervised Learning]\n    C --> F[Gradient Descent]\n    C --> G[Model Evaluation]",
             "generatedAt": "2025-12-08T13:08:22.557Z",
             "generationPrompt": "You are a course designer. Generate a structured course outline based on the following information.\n\nKNOWLEDGE TEXT:\nMachine learning is a subset of artificial intelligence that focuses on building systems that can learn from data. Key concepts include supervised learning, unsupervised learning, and reinforcement learning. Neural networks are a fundamental building block, and gradient descent is the primary optimization algorithm used.\n\nKEY CONCEPTS TO COVER:\ngradient descent\n- model evaluation\n\nKEYWORDS:\nAI, deep learning, algorithms, data science\n\nACCESSIBILITY MODE: visual\n\nVISUAL LEARNERS prefer:\n- Diagrams, charts, and infographics\n- Color-coded information\n- Mind maps and visual hierarchies\n- Images and illustrations\n- Spatial organization of content\n\nGenerate a hierarchical course outline with:\n1. Main topics (level 1)\n2. Subtopics (level 2)\n3. Detailed points (level 3)\n\nFor each node, provide:\n- title: Clear, concise title\n- description: 2-3 sentence explanation\n- estimatedDuration: Estimated minutes to teach this section\n- order: Sequential position\n\nAlso generate a Mermaid diagram code representing the course structure.\n\nReturn ONLY valid JSON in this exact format:\n{\n  \"nodes\": [\n    {\n      \"id\": \"node_1\",\n      \"title\": \"Introduction\",\n      \"description\": \"Overview of the topic...\",\n      \"level\": 1,\n      \"order\": 0,\n      \"estimatedDuration\": 15,\n      \"children\": [\n        {\n          \"id\": \"node_1_1\",\n          \"title\": \"What is X?\",\n          \"description\": \"Definition and scope...\",\n          \"level\": 2,\n          \"order\": 0,\n          \"estimatedDuration\": 5\n        }\n      ]\n    }\n  ],\n  \"mermaidCode\": \"graph TD\\n  A[Main Topic] --> B[Subtopic 1]\\n  A --> C[Subtopic 2]\"\n}"
+    },
+    "generateSlideResponse": {
+    "model": "claude-3-5-haiku-20241022",
+    "id": "msg_01QuYzHb6yPkUGJByJiH613j",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+        {
+            "type": "text",
+            "text": "[\n  {\n    \"title\": \"Introduction to Machine Learning\",\n    \"content\": [\n      {\n        \"type\": \"heading\",\n        \"content\": \"Machine Learning: Transforming Data into Intelligence\"\n      },\n      {\n        \"type\": \"diagram\",\n        \"content\": \"graph TD\n          A[Artificial Intelligence] --> B[Machine Learning]\n          B --> C[Supervised Learning]\n          B --> D[Unsupervised Learning]\n          B --> E[Reinforcement Learning]\"\n      },\n      {\n        \"type\": \"quote\",\n        \"content\": \"Machine Learning: Teaching computers to learn from experience without being explicitly programmed\"\n      }\n    ],\n    \"speakerNotes\": \"Introduce machine learning as a powerful approach to creating intelligent systems that can learn and improve from data.\",\n    \"layout\": \"two-column\",\n    \"outlineNodeId\": \"node_1\"\n  },\n  {\n    \"title\": \"What is Machine Learning?\",\n    \"content\": [\n      {\n        \"type\": \"heading\",\n        \"content\": \"Defining Machine Learning\"\n      },\n      {\n        \"type\": \"bullet-points\",\n        \"content\": [\n          \"A subset of artificial intelligence\",\n          \"Systems that improve through experience\",\n          \"Learn patterns from data automatically\",\n          \"Adapt and make intelligent decisions\"\n        ]\n      },\n      {\n        \"type\": \"diagram\",\n        \"content\": \"flowchart LR\n          A[Raw Data] --> B[Machine Learning Algorithm]\n          B --> C[Learned Patterns]\n          C --> D[Intelligent Predictions]\"\n      }\n    ],\n    \"speakerNotes\": \"Explain how machine learning differs from traditional programming by focusing on learning from data patterns.\",\n    \"layout\": \"two-column\",\n    \"outlineNodeId\": \"node_1_1\"\n  },\n  {\n    \"title\": \"Types of Machine Learning\",\n    \"content\": [\n      {\n        \"type\": \"heading\",\n        \"content\": \"Three Primary Learning Paradigms\"\n      },\n      {\n        \"type\": \"diagram\",\n        \"content\": \"flowchart TD\n          A[Machine Learning Types] --> B[Supervised Learning]\n          A --> C[Unsupervised Learning]\n          A --> D[Reinforcement Learning]\n          \n          B --> B1[Labeled Training Data]\n          B --> B2[Predictive Modeling]\n          \n          C --> C1[Unlabeled Data]\n          C --> C2[Pattern Discovery]\n          \n          D --> D1[Learn through Interaction]\n          D --> D2[Reward-based Learning]\"\n      },\n      {\n        \"type\": \"bullet-points\",\n        \"content\": [\n          \"Supervised Learning: Predictive modeling with labeled data\",\n          \"Unsupervised Learning: Discovering hidden patterns\",\n          \"Reinforcement Learning: Learning through interaction and feedback\"\n        ]\n      }\n    ],\n    \"speakerNotes\": \"Break down the three main types of machine learning, highlighting their unique characteristics and use cases.\",\n    \"layout\": \"diagram\",\n    \"outlineNodeId\": \"node_1_1_1\"\n  }\n]"
         }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+        "input_tokens": 749,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 767,
+        "service_tier": "standard"
+    }
+}
 }

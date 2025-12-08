@@ -3,6 +3,7 @@ import { OutlineNode, OutlineStructure, AccessibilityMode } from '../models/cour
 import { Slide } from '../models/slide.model';
 import { Env } from '../utils/raindrop.gen';
 import { buildCourseOutlinePrompt, buildCourseSlidePrompt } from './prompt.templates';
+import generateSlideResponse from '../sample-data.json';
 
 /**
  * Generate course outline from knowledge text using Claude API

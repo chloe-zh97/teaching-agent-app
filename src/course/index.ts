@@ -467,32 +467,38 @@ app.post('/api/courses/:courseId/agent', async (c) => {
     //const courseServiceUrl = "https://svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run";
 
     c.env.logger.debug(`🎙️  Creating agent for course ${courseId}`);
-    //c.env.logger.debug(`   Course Service: ${courseServiceUrl}`);
 
     // Import workflow
     const {
       executeAgentCreationWorkflow,
-      recreateAgentWorkflow,
+      //recreateAgentWorkflow,
     } = await import('../workflows/agent.workflow');
 
     // Execute workflow (recreate if requested)
-    const result = recreate
-      ? await recreateAgentWorkflow(
-          courseId, 
-          teacherId, 
-          voiceId, 
-          // c.env.KV_CACHE, 
-          // c.env.ELEVENLABS_API_KEY,
-          c.env
-        )
-      : await executeAgentCreationWorkflow(
-          courseId, 
-          teacherId, 
-          voiceId, 
-          // c.env.KV_CACHE, 
-          // c.env.ELEVENLABS_API_KEY,
-          c.env
-        );
+    // const result = recreate
+    //   ? await recreateAgentWorkflow(
+    //       courseId, 
+    //       teacherId, 
+    //       voiceId, 
+    //       // c.env.KV_CACHE, 
+    //       // c.env.ELEVENLABS_API_KEY,
+    //       c.env
+    //     )
+    //   : await executeAgentCreationWorkflow(
+    //       courseId, 
+    //       teacherId, 
+    //       voiceId, 
+    //       // c.env.KV_CACHE, 
+    //       // c.env.ELEVENLABS_API_KEY,
+    //       c.env
+    //     );
+
+    const result = await executeAgentCreationWorkflow(
+      courseId, 
+      teacherId, 
+      voiceId, 
+      c.env
+    );
 
     return c.json({
       success: true,

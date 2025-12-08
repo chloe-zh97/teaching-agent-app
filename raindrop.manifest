@@ -14,7 +14,7 @@ application "teaching-agent-app" {
   }
 
   service "slide" {
-    visibility = "private"
+    visibility = "public"
   }
 
   service "session" {
