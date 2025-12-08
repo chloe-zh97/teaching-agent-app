@@ -25,6 +25,7 @@ import {
   getRecommendedVoiceId,
   generateAgentDescription,
 } from '../services/prompt.templates';
+import { generateOutline, generateSlides } from '../services/course-generation.service';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
 
 /**
@@ -36,6 +37,8 @@ export interface AgentCreationResult {
   status: 'created' | 'exists';
   message: string;
   warnings?: string[];
+  slidesGenerated?: boolean;
+  outlineGenerated?: boolean;
 }
 
 /**
@@ -46,7 +49,7 @@ export interface AgentCreationResult {
  * Steps:
  * 1. ✅ Validate course exists and has slides
  * 2. ✅ Check if agent already exists (avoid duplicates)
- * 3. ✅ Fetch all slides for the course
+ * 3. ✅ Fetch all slides for the course (AUTO-GENERATE if missing)
  * 4. ✅ Build knowledge base from slides and course content
  * 5. ✅ Validate knowledge base quality
  * 6. ✅ Generate system prompt with teaching strategies
@@ -67,7 +70,7 @@ export async function executeAgentCreationWorkflow(
   teacherId: string,
   voiceId: string | undefined,
   kvCache: KvCache,
-  elevenLabsApiKey: string
+  elevenLabsApiKey: string,
 ): Promise<AgentCreationResult> {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`🚀 AGENT CREATION WORKFLOW STARTED`);
@@ -76,12 +79,14 @@ export async function executeAgentCreationWorkflow(
   console.log(`   Voice ID: ${voiceId || 'auto-select'}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-  // Initialize ElevenLabs client
   initializeElevenLabsClient(elevenLabsApiKey);
 
   const courseRepo = new CourseRepository(kvCache);
   const slideRepo = new SlideRepository(kvCache);
   const agentRepo = new AgentRepository(kvCache);
+
+  let outlineGenerated = false;
+  let slidesGenerated = false;
 
   try {
     // ────────────────────────────────────────────────────────────
@@ -116,17 +121,97 @@ export async function executeAgentCreationWorkflow(
     console.log('   ✓ No existing agent found');
 
     // ────────────────────────────────────────────────────────────
-    // STEP 3: Fetch all slides
+    // STEP 3: Fetch all slides (AUTO-GENERATE if missing)
     // ────────────────────────────────────────────────────────────
     console.log('📄 [3/10] Fetching slides...');
-    const slides = await slideRepo.listByCourse(courseId);
+    let slides = await slideRepo.listByCourse(courseId);
 
+    // AUTO-GENERATE slides if none exist
     if (!slides || slides.length === 0) {
-      throw new ValidationError(
-        `Cannot create agent: No slides found for course ${courseId}. Please generate slides first using the course workflow.`
-      );
+      console.log('   ⚠️  No slides found - initiating auto-generation...');
+
+      // Check if course has outline
+      if (!course.outline || !course.outline.nodes || course.outline.nodes.length === 0) {
+        console.log('   📋 Generating outline first...');
+        
+        // Validate course has required data for outline generation
+        if (!course.knowledgeText || course.knowledgeText.trim().length === 0) {
+          throw new ValidationError(
+            'Cannot generate slides: Course has no knowledge text. Please add course content first.'
+          );
+        }
+
+        // Generate outline using Claude AI
+        try {
+          const outline = await generateOutline(
+            course.knowledgeText,
+            course.concepts || [],
+            course.accessibility || 'visual',
+            course.keywords
+          );
+
+          // Update course with generated outline
+          await courseRepo.updateOutline(courseId, {outline});
+
+          console.log(`   ✅ Outline generated with ${outline.nodes.length} nodes`);
+          outlineGenerated = true;
+
+          // Update course object with new outline
+          course.outline = outline;
+        } catch (error) {
+          console.error('   ❌ Failed to generate outline:', error);
+          throw new ValidationError(
+            `Failed to generate course outline: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
+        }
+      } else {
+        console.log(`   ✓ Using existing outline (${course.outline.nodes.length} nodes)`);
+      }
+
+      // Generate slides from outline
+      console.log('   🎨 Generating slides from outline...');
+      try {
+        const generatedSlides = await generateSlides(
+          course.outline.nodes,
+          course.accessibility || 'visual',
+          course.knowledgeText || ''
+        );
+
+        // Save generated slides to database
+        console.log(`   💾 Saving ${generatedSlides.length} generated slides...`);
+        const savedSlides = [];
+        for (const slideData of generatedSlides) {
+          const slide = await slideRepo.create({
+            courseId,
+            title: slideData.title,
+            content: slideData.content,
+            speakerNotes: slideData.speakerNotes,
+            outlineNodeId: slideData.outlineNodeId,
+            order: slideData.order,
+            accessibilityMode: slideData.accessibilityMode,
+            visualAids: slideData.visualAids,
+            audioNarration: slideData.audioNarration,
+            layout: slideData.layout,
+            theme: slideData.theme,
+            backgroundColor: slideData.backgroundColor,
+            generatedBy: 'ai',
+            aiPrompt: slideData.aiPrompt,
+          });
+          savedSlides.push(slide);
+        }
+
+        slides = savedSlides;
+        slidesGenerated = true;
+        console.log(`   ✅ Generated and saved ${slides.length} slides`);
+      } catch (error) {
+        console.error('   ❌ Failed to generate slides:', error);
+        throw new ValidationError(
+          `Failed to generate slides: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
+    } else {
+      console.log(`   ✓ Found ${slides.length} existing slides`);
     }
-    console.log(`   ✓ Found ${slides.length} slides`);
 
     // ────────────────────────────────────────────────────────────
     // STEP 4: Build knowledge base
@@ -247,14 +332,20 @@ export async function executeAgentCreationWorkflow(
     console.log(`   ElevenLabs Agent ID: ${elevenLabsAgent.agentId}`);
     console.log(`   Course: ${course.title}`);
     console.log(`   Slides: ${slides.length}`);
+    if (outlineGenerated) console.log(`   📋 Auto-generated outline`);
+    if (slidesGenerated) console.log(`   🎨 Auto-generated slides`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     return {
       agentId,
       elevenLabsAgentId: elevenLabsAgent.agentId,
       status: 'created',
-      message: 'Agent created successfully',
+      message: slidesGenerated 
+        ? 'Agent created successfully with auto-generated slides'
+        : 'Agent created successfully',
       warnings: validation.warnings.length > 0 ? validation.warnings : undefined,
+      slidesGenerated,
+      outlineGenerated,
     };
   } catch (error) {
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -446,7 +537,9 @@ export async function recreateAgentWorkflow(
   teacherId: string,
   voiceId: string | undefined,
   kvCache: KvCache,
-  elevenLabsApiKey: string
+  elevenLabsApiKey: string,
+  // anthropicApiKey: string,
+  // courseServiceUrl: string,
 ): Promise<AgentCreationResult> {
   console.log('🔄 Recreating agent for course:', courseId);
 

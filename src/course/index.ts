@@ -6,7 +6,7 @@ import {
   AccessibilityMode,
   CourseStatus 
 } from '../models/course.model';
-import { NotFoundError, ValidationError, UnauthorizedError } from '../utils/errors';
+import { NotFoundError, ValidationError, UnauthorizedError, ConflictError } from '../utils/errors';
 import { Env } from '../utils/raindrop.gen';
 import { Service } from '@liquidmetal-ai/raindrop-framework';
 
@@ -316,33 +316,82 @@ app.post('/api/courses/:id/slides', async (c) => {
 });
 
 
-/**
- * POST /courses/:id/agent
- * Update course agent (Step 4: after agent creation)
- */
-app.post('/api/courses/:id/agent', async (c) => {
+app.post('/api/courses/:courseId/agent', async (c) => {
   try {
-    const courseId = c.req.param('id');
-    const { agentId, voiceId } = await c.req.json();
+    const courseId = c.req.param('courseId');
+    const { voiceId, teacherId, recreate } = await c.req.json();
 
-    if (!agentId || !voiceId) {
-      return c.json({ error: 'agentId and voiceId are required' }, 400);
+    if (!teacherId) {
+      return c.json({ error: 'teacherId is required' }, 400);
     }
 
-    const courseRepo = new CourseRepository(c.env.KV_CACHE);
-    const course = await courseRepo.updateAgent(courseId, { agentId, voiceId });
+    // Check for required API keys
+    if (!c.env.ELEVENLABS_API_KEY) {
+      return c.json({
+        error: 'ElevenLabs API key not configured',
+        message: 'Set ELEVENLABS_API_KEY in environment variables',
+      }, 500);
+    }
+
+    if (!c.env.ANTHROPIC_API_KEY) {
+      return c.json({
+        error: 'Anthropic API key not configured',
+        message: 'Set ANTHROPIC_API_KEY in environment variables',
+      }, 500);
+    }
+
+    // Get the Course service URL from environment variable
+    //const courseServiceUrl = c.env.COURSE_SERVICE_URL || 'http://localhost:8787';
+    //const courseServiceUrl = "https://svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run";
+
+    c.env.logger.debug(`🎙️  Creating agent for course ${courseId}`);
+    //c.env.logger.debug(`   Course Service: ${courseServiceUrl}`);
+
+    // Import workflow
+    const {
+      executeAgentCreationWorkflow,
+      recreateAgentWorkflow,
+    } = await import('../workflows/agent.workflow');
+
+    // Execute workflow (recreate if requested)
+    const result = recreate
+      ? await recreateAgentWorkflow(
+          courseId, 
+          teacherId, 
+          voiceId, 
+          c.env.KV_CACHE, 
+          c.env.ELEVENLABS_API_KEY
+        )
+      : await executeAgentCreationWorkflow(
+          courseId, 
+          teacherId, 
+          voiceId, 
+          c.env.KV_CACHE, 
+          c.env.ELEVENLABS_API_KEY,
+        );
 
     return c.json({
       success: true,
-      message: 'Course agent updated successfully',
-      data: course,
-    });
+      message: result.message,
+      agentId: result.agentId,
+      elevenLabsAgentId: result.elevenLabsAgentId,
+      status: result.status,
+      warnings: result.warnings,
+      //generatedSlides: result.generatedSlides,
+    }, result.status === 'created' ? 201 : 200);
   } catch (error) {
+    if (error instanceof ConflictError) {
+      return c.json({ error: error.message }, 409);
+    }
     if (error instanceof NotFoundError) {
       return c.json({ error: error.message }, 404);
     }
+    if (error instanceof ValidationError) {
+      return c.json({ error: error.message }, 400);
+    }
+    console.error('❌ Agent creation failed:', error);
     return c.json({
-      error: 'Failed to update course agent',
+      error: 'Failed to create agent',
       message: error instanceof Error ? error.message : 'Unknown error',
     }, 500);
   }

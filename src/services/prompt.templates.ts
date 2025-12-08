@@ -3,8 +3,9 @@
  * All agent prompts in one place for easy iteration and A/B testing
  */
 
-import { Course } from '../models/course.model';
+import { Course, OutlineNode } from '../models/course.model';
 import { Slide } from '../models/slide.model';
+import { getAccessibilityGuidelines } from './course-generation.service';
 
 // Define AccessibilityMode type locally since it's not in common.model
 type AccessibilityMode = 'visual' | 'auditory' | 'kinesthetic' | 'reading';
@@ -240,6 +241,132 @@ ${knowledgeBase}
 
 **Remember:** You're not just a question-answering machine—you're an active, engaged teacher who helps students truly understand and retain the material. Be conversational, educational, and supportive at all times!
 `;
+}
+
+/**
+ * Build generate outline prompt
+ */
+export function buildCourseOutlinePrompt(
+  knowledgeText: string,
+  concepts: string[],
+  accessibility: AccessibilityMode,
+  keywords?: string[]
+): string {
+  return `You are a course designer. Generate a structured course outline based on the following information.
+
+KNOWLEDGE TEXT:
+${knowledgeText}
+
+KEY CONCEPTS TO COVER:
+${concepts.join('\n- ')}
+
+${keywords && keywords.length > 0 ? `KEYWORDS:\n${keywords.join(', ')}` : ''}
+
+ACCESSIBILITY MODE: ${accessibility}
+${getAccessibilityGuidelines(accessibility)}
+
+Generate a hierarchical course outline with:
+1. Main topics (level 1)
+2. Subtopics (level 2)
+3. Detailed points (level 3)
+
+For each node, provide:
+- title: Clear, concise title
+- description: 2-3 sentence explanation
+- estimatedDuration: Estimated minutes to teach this section
+- order: Sequential position
+
+Also generate a Mermaid diagram code representing the course structure.
+
+Return ONLY valid JSON in this exact format:
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "title": "Introduction",
+      "description": "Overview of the topic...",
+      "level": 1,
+      "order": 0,
+      "estimatedDuration": 15,
+      "children": [
+        {
+          "id": "node_1_1",
+          "title": "What is X?",
+          "description": "Definition and scope...",
+          "level": 2,
+          "order": 0,
+          "estimatedDuration": 5
+        }
+      ]
+    }
+  ],
+  "mermaidCode": "graph TD\\n  A[Main Topic] --> B[Subtopic 1]\\n  A --> C[Subtopic 2]"
+}`;
+}
+
+/**
+ * Build generate slide prompt
+ */
+export function buildCourseSlidePrompt(
+  outline: OutlineNode[],
+  accessibility: AccessibilityMode,
+  courseContext: string
+):string {
+  return `You are a course content creator. Generate presentation slides based on this course outline.
+
+COURSE CONTEXT:
+${courseContext}
+
+OUTLINE:
+${JSON.stringify(outline, null, 2)}
+
+ACCESSIBILITY MODE: ${accessibility}
+${getAccessibilityGuidelines(accessibility)}
+
+Generate slides that:
+1. Cover each topic in the outline
+2. Use appropriate content types for ${accessibility} learners
+3. Include speaker notes for instructors
+4. Have clear, engaging titles
+
+For each slide, provide:
+- title: Clear slide title
+- content: Array of content blocks with type and content
+- speakerNotes: Teaching notes for the instructor
+- layout: Appropriate layout (title, content, two-column, diagram)
+- outlineNodeId: Reference to outline node
+
+Content types available:
+- heading: Main headings
+- text: Paragraphs
+- bullet-points: Lists (content as array)
+- diagram: Mermaid diagram code
+- quote: Important quotes
+- code: Code examples
+
+Return ONLY valid JSON as an array of slides:
+[
+  {
+    "title": "Introduction to Topic",
+    "content": [
+      {
+        "type": "heading",
+        "content": "Welcome"
+      },
+      {
+        "type": "text",
+        "content": "This course covers..."
+      },
+      {
+        "type": "bullet-points",
+        "content": ["Point 1", "Point 2", "Point 3"]
+      }
+    ],
+    "speakerNotes": "Start with a warm welcome. Ask students about their background.",
+    "layout": "title",
+    "outlineNodeId": "node_1"
+  }
+]`;
 }
 
 /**

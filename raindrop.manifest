@@ -34,4 +34,15 @@ application "teaching-agent-app" {
   }
 
   kv_cache "kv_cache" {}
+
+  env "ANTHROPIC_API_KEY" {
+    secret = true
+  }
+
+  env "ELEVENLABS_API_KEY" {
+    secret = true
+  }
+
+  env "COURSE_SERVICE_URL" {}
+  env "SLIDE_SERVICE_URL" {}
 }
