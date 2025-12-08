@@ -31,6 +31,7 @@ import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
 import { Course } from '../models/course.model';
 import { Slide } from '../models/slide.model';
 import { Env } from '../utils/raindrop.gen';
+import { length } from 'zod';
 
 /**
  * Result type for agent creation workflow
@@ -65,8 +66,6 @@ async function fetchCourseFromAPI(courseId: string, c: Env): Promise<Course> {
  * Fetch slides from Course API
  */
 async function fetchSlidesFromAPI(courseId: string, c: Env): Promise<Slide[]> {
-  //console.log(`fetch slides from api: ${c.COURSE_SERVICE_URL}`);
-  //const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseId}/slides`);
   const slideServiceUrl = "http://svc-01kby5q2y1m2a8yg5g7mygmne3.01karqzwhx6azztkab3ppk0vq6.lmapp.run";
   const response = await fetch(`${slideServiceUrl}/api/courses/${courseId}/slides`);
   
@@ -262,6 +261,7 @@ export async function executeAgentCreationWorkflow(
           course.accessibility || 'visual',
           course.keywords,
         );
+
         console.log(`   ✓ Generated outline with ${outline.nodes.length} nodes`);
 
         // Update course with generated outline (via Course API)
@@ -276,6 +276,7 @@ export async function executeAgentCreationWorkflow(
           course.accessibility || 'visual',
           course.knowledgeText,
         );
+    
         console.log(`   ✓ Generated ${generatedSlides.length} slides`);
 
         // Step 3c: Save slides to Course service
@@ -355,6 +356,7 @@ export async function executeAgentCreationWorkflow(
       firstMessage,
       language: 'en',
     });
+    // const elevenLabsAgent = { agentId: '12' };
 
     console.log(`   ✅ ElevenLabs agent created!`);
     console.log(`   Agent ID: ${elevenLabsAgent.agentId}`);

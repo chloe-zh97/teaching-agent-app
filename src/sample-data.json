@@ -1,0 +1,109 @@
+{
+    "outline": {
+            "nodes": [
+                {
+                    "id": "node_1",
+                    "title": "Introduction to Machine Learning",
+                    "description": "Comprehensive overview of machine learning as a core discipline in artificial intelligence. Explores how systems can learn and adapt from data-driven approaches.",
+                    "level": 1,
+                    "order": 0,
+                    "estimatedDuration": 30,
+                    "children": [
+                        {
+                            "id": "node_1_1",
+                            "title": "What is Machine Learning?",
+                            "description": "Defining machine learning and its relationship to artificial intelligence. Explaining how machines learn from data and make intelligent decisions.",
+                            "level": 2,
+                            "order": 0,
+                            "estimatedDuration": 15,
+                            "children": [
+                                {
+                                    "id": "node_1_1_1",
+                                    "title": "ML vs Traditional Programming",
+                                    "description": "Comparing machine learning approaches with traditional rule-based programming techniques.",
+                                    "level": 3,
+                                    "order": 0,
+                                    "estimatedDuration": 10
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "node_2",
+                    "title": "Learning Paradigms",
+                    "description": "Exploring the fundamental learning approaches in machine learning, including supervised, unsupervised, and reinforcement learning.",
+                    "level": 1,
+                    "order": 1,
+                    "estimatedDuration": 45,
+                    "children": [
+                        {
+                            "id": "node_2_1",
+                            "title": "Supervised Learning",
+                            "description": "Learning with labeled training data, focusing on prediction and classification tasks.",
+                            "level": 2,
+                            "order": 0,
+                            "estimatedDuration": 20,
+                            "children": [
+                                {
+                                    "id": "node_2_1_1",
+                                    "title": "Classification Algorithms",
+                                    "description": "Exploring key classification techniques like decision trees, logistic regression, and support vector machines.",
+                                    "level": 3,
+                                    "order": 0,
+                                    "estimatedDuration": 15
+                                }
+                            ]
+                        },
+                        {
+                            "id": "node_2_2",
+                            "title": "Unsupervised Learning",
+                            "description": "Learning patterns from unlabeled data through clustering and dimensionality reduction techniques.",
+                            "level": 2,
+                            "order": 1,
+                            "estimatedDuration": 15
+                        }
+                    ]
+                },
+                {
+                    "id": "node_3",
+                    "title": "Optimization Techniques",
+                    "description": "Deep dive into machine learning optimization methods, with a focus on gradient descent and model evaluation strategies.",
+                    "level": 1,
+                    "order": 2,
+                    "estimatedDuration": 60,
+                    "children": [
+                        {
+                            "id": "node_3_1",
+                            "title": "Gradient Descent",
+                            "description": "Comprehensive exploration of gradient descent as a fundamental optimization algorithm for training machine learning models.",
+                            "level": 2,
+                            "order": 0,
+                            "estimatedDuration": 30,
+                            "children": [
+                                {
+                                    "id": "node_3_1_1",
+                                    "title": "Stochastic Gradient Descent",
+                                    "description": "Understanding stochastic variants and their application in large-scale machine learning problems.",
+                                    "level": 3,
+                                    "order": 0,
+                                    "estimatedDuration": 20
+                                }
+                            ]
+                        },
+                        {
+                            "id": "node_3_2",
+                            "title": "Model Evaluation",
+                            "description": "Techniques for assessing model performance, including metrics, cross-validation, and bias-variance trade-offs.",
+                            "level": 2,
+                            "order": 1,
+                            "estimatedDuration": 30
+                        }
+                    ]
+                }
+            ],
+            "mermaidCode": "graph TD\n    A[Machine Learning] --> B[Learning Paradigms]\n    A --> C[Optimization Techniques]\n    B --> D[Supervised Learning]\n    B --> E[Unsupervised Learning]\n    C --> F[Gradient Descent]\n    C --> G[Model Evaluation]",
+            "generatedAt": "2025-12-08T13:08:22.557Z",
+            "generationPrompt": "You are a course designer. Generate a structured course outline based on the following information.\n\nKNOWLEDGE TEXT:\nMachine learning is a subset of artificial intelligence that focuses on building systems that can learn from data. Key concepts include supervised learning, unsupervised learning, and reinforcement learning. Neural networks are a fundamental building block, and gradient descent is the primary optimization algorithm used.\n\nKEY CONCEPTS TO COVER:\ngradient descent\n- model evaluation\n\nKEYWORDS:\nAI, deep learning, algorithms, data science\n\nACCESSIBILITY MODE: visual\n\nVISUAL LEARNERS prefer:\n- Diagrams, charts, and infographics\n- Color-coded information\n- Mind maps and visual hierarchies\n- Images and illustrations\n- Spatial organization of content\n\nGenerate a hierarchical course outline with:\n1. Main topics (level 1)\n2. Subtopics (level 2)\n3. Detailed points (level 3)\n\nFor each node, provide:\n- title: Clear, concise title\n- description: 2-3 sentence explanation\n- estimatedDuration: Estimated minutes to teach this section\n- order: Sequential position\n\nAlso generate a Mermaid diagram code representing the course structure.\n\nReturn ONLY valid JSON in this exact format:\n{\n  \"nodes\": [\n    {\n      \"id\": \"node_1\",\n      \"title\": \"Introduction\",\n      \"description\": \"Overview of the topic...\",\n      \"level\": 1,\n      \"order\": 0,\n      \"estimatedDuration\": 15,\n      \"children\": [\n        {\n          \"id\": \"node_1_1\",\n          \"title\": \"What is X?\",\n          \"description\": \"Definition and scope...\",\n          \"level\": 2,\n          \"order\": 0,\n          \"estimatedDuration\": 5\n        }\n      ]\n    }\n  ],\n  \"mermaidCode\": \"graph TD\\n  A[Main Topic] --> B[Subtopic 1]\\n  A --> C[Subtopic 2]\"\n}"
+        }
+}
