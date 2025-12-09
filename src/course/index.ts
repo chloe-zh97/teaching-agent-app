@@ -6,7 +6,7 @@ import {
   AccessibilityMode,
   CourseStatus 
 } from '../models/course.model';
-import { NotFoundError, ValidationError, UnauthorizedError, ConflictError } from '../utils/errors';
+import { NotFoundError, ValidationError, ConflictError } from '../utils/errors';
 import { Env } from '../utils/raindrop.gen';
 import { Service } from '@liquidmetal-ai/raindrop-framework';
 import { SlideRepository } from '../repositories/slide.repository';
@@ -203,8 +203,6 @@ app.post('/api/courses/:courseId/slides/reorder', async (c) => {
 app.get('/api/courses/:courseId/of/slides/count', async (c) => {
   try {
     const courseId = c.req.param('courseId');
-    // c.env.logger.debug("course Id: ", {courseId: courseId});
-
     const slideRepo = new SlideRepository(c.env.KV_CACHE);
     const count = await slideRepo.countByCourse(courseId);
 
@@ -462,43 +460,28 @@ app.post('/api/courses/:courseId/agent', async (c) => {
       }, 500);
     }
 
-    // Get the Course service URL from environment variable
-    //const courseServiceUrl = c.env.COURSE_SERVICE_URL || 'http://localhost:8787';
-    //const courseServiceUrl = "https://svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run";
-
     c.env.logger.debug(`🎙️  Creating agent for course ${courseId}`);
 
     // Import workflow
     const {
       executeAgentCreationWorkflow,
-      //recreateAgentWorkflow,
+      recreateAgentWorkflow,
     } = await import('../workflows/agent.workflow');
 
     // Execute workflow (recreate if requested)
-    // const result = recreate
-    //   ? await recreateAgentWorkflow(
-    //       courseId, 
-    //       teacherId, 
-    //       voiceId, 
-    //       // c.env.KV_CACHE, 
-    //       // c.env.ELEVENLABS_API_KEY,
-    //       c.env
-    //     )
-    //   : await executeAgentCreationWorkflow(
-    //       courseId, 
-    //       teacherId, 
-    //       voiceId, 
-    //       // c.env.KV_CACHE, 
-    //       // c.env.ELEVENLABS_API_KEY,
-    //       c.env
-    //     );
-
-    const result = await executeAgentCreationWorkflow(
-      courseId, 
-      teacherId, 
-      voiceId, 
-      c.env
-    );
+    const result = recreate
+      ? await recreateAgentWorkflow(
+          courseId, 
+          teacherId, 
+          voiceId, 
+          c.env
+        )
+      : await executeAgentCreationWorkflow(
+          courseId, 
+          teacherId, 
+          voiceId, 
+          c.env
+        );
 
     return c.json({
       success: true,
@@ -507,7 +490,7 @@ app.post('/api/courses/:courseId/agent', async (c) => {
       elevenLabsAgentId: result.elevenLabsAgentId,
       status: result.status,
       warnings: result.warnings,
-      //generatedSlides: result.generatedSlides,
+      generatedSlides: result.generatedSlides,
     }, result.status === 'created' ? 201 : 200);
   } catch (error) {
     if (error instanceof ConflictError) {
