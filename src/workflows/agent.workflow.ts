@@ -29,8 +29,8 @@ import { NotFoundError, ValidationError } from '../utils/errors';
 import { Course } from '../models/course.model';
 import { Slide } from '../models/slide.model';
 import { Env } from '../utils/raindrop.gen';
-
-/**
+import { generateSlideResponse } from '../sample-data.json';
+/** 
  * Result type for agent creation workflow
  */
 export interface AgentCreationResult {
@@ -53,6 +53,21 @@ async function fetchCourseFromAPI(courseId: string, c: Env): Promise<Course> {
       throw new NotFoundError(`Course ${courseId} not found!`);
     }
     throw new Error(`Failed to fetch course: ${response.statusText}`);
+  }
+  
+  const data = await response.json() as any;
+  return data.data; // Assuming response format: { success: true, data: Course }
+}
+
+async function fetchSlidesByCourseId(courseId: string, c: Env) : Promise<Slide[]> {
+  const courseIdfix = "course_1765157269981-f5zl920nu";
+  const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseIdfix}/slides`);
+  
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new NotFoundError(`Slides of ${courseId} not found!`);
+    }
+    throw new Error(`Failed to fetch course slides: ${response.statusText}`);
   }
   
   const data = await response.json() as any;
@@ -236,27 +251,29 @@ export async function executeAgentCreationWorkflow(
         );
       }
 
-      console.log('   🧠 [3a/10] Generating course outline...');
-      const outline = course.outline
-        ? course.outline
-        : await generateOutline(
-          c,
-          course.knowledgeText,
-          course.concepts || [],
-          course.accessibility || 'visual',
-          course.keywords,
-        );
-      console.log(`   ✓ Generated outline with ${outline.nodes.length} nodes`);
-      await updateCourseOutlineViaAPI(courseId, outline, c);
-      c.logger.info('   ✓ Outline saved to course');
+      // console.log('   🧠 [3a/10] Generating course outline...');
+      // const outline = course.outline
+      //   ? course.outline
+      //   : await generateOutline(
+      //     c,
+      //     course.knowledgeText,
+      //     course.concepts || [],
+      //     course.accessibility || 'visual',
+      //     course.keywords,
+      //   );
+      // console.log(`   ✓ Generated outline with ${outline.nodes.length} nodes`);
+      // await updateCourseOutlineViaAPI(courseId, outline, c);
+      // c.logger.info('   ✓ Outline saved to course');
       
-      console.log('   📝 [3b/10] Generating slides from outline...');
-      const generatedSlides = await generateSlides(
-          c,
-          outline.nodes,
-          course.accessibility || 'visual',
-          course.knowledgeText,
-        );
+      // console.log('   📝 [3b/10] Generating slides from outline...');
+      // const generatedSlides = await generateSlides(
+      //     c,
+      //     outline.nodes,
+      //     course.accessibility || 'visual',
+      //     course.knowledgeText,
+      //   );
+      const generatedSlides = await fetchSlidesByCourseId(courseId, c);
+  
       console.log(`   ✓ Generated ${generatedSlides.length} slides`);
 
       console.log('   💾 [3c/10] Saving generated slides...');
