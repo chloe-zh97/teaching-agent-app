@@ -1,0 +1,50 @@
+// Raindrop Manifest Template
+// This template shows examples of all available modules in Raindrop
+// Generated service handlers include Hono.js for HTTP services
+// Uncomment the modules you want to use in your application
+
+application "teaching-agent-backend-v2" {
+
+  // === Environment Variables ===
+  // Define environment variables for your application
+  // env "EXAMPLE_VAR" {
+  //   default = "default-value"
+  // }
+
+  // env "SECRET_VAR" {
+  //   secret = true
+  // }
+
+  // === Services ===
+  // HTTP services for external traffic
+  // service "api-service" {
+  //   visibility = "public"  // Options: public, protected, private
+  //   domain {
+  //     cname = "your-service"  // your-service.<tenant>.lmapp.run
+  //   }
+  // }
+
+  service "workflow-api" {
+    visibility = "public"
+  }
+
+  service "user-service" {
+    visibility = "private"
+  }
+
+  // === Key-Value Storage ===
+  // KV cache for fast key-value operations
+  // kv_cache "session-cache" {}
+
+  // === Module-specific Environment Variables ===
+  // You can bind environment variables to specific modules
+  // service "api" {
+  //   env "API_SECRET" {
+  //     secret = true
+  //   }
+  //
+  //   domain {
+  //     fqdn = "api.your-domain.com"
+  //   }
+  // }
+}
