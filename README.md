@@ -604,3 +604,49 @@ POST /api/transcribe
 → Creates Transcription (with 24h TTL)
 → Returns text for course creation
 ```
+
+## Test
+### Generate Slides
+**Request**
+```json
+{
+  "model": "claude-3-5-haiku-latest",
+  "max_tokens": 8000,
+  "temperature": 0.7,
+  "messages": [
+    {
+      "role": "user",
+      "content": "You are a course content creator. Generate presentation slides based on this course outline.\n\nCOURSE CONTEXT:\nMachine learning is a subset of artificial intelligence that focuses on building systems that can learn from data. Key concepts include supervised learning, unsupervised learning, and reinforcement learning. Neural networks are a fundamental building block, and gradient descent is the primary optimization algorithm used.\n\nOUTLINE:\n[\n  {\n    \"id\": \"node_1\",\n    \"title\": \"Introduction to Machine Learning\",\n    \"description\": \"Comprehensive overview of machine learning as a core artificial intelligence discipline. Explore the fundamental concepts and significance of learning systems.\",\n    \"level\": 1,\n    \"order\": 0,\n    \"estimatedDuration\": 30,\n    \"children\": [\n      {\n        \"id\": \"node_1_1\",\n        \"title\": \"What is Machine Learning?\",\n        \"description\": \"Define machine learning and its relationship to artificial intelligence. Explain how systems learn from data and adapt their performance.\",\n        \"level\": 2,\n        \"order\": 0,\n        \"estimatedDuration\": 10,\n        \"children\": [\n          {\n            \"id\": \"node_1_1_1\",\n            \"title\": \"Types of Machine Learning\",\n            \"description\": \"Explore supervised, unsupervised, and reinforcement learning paradigms. Understand the key differences and use cases.\",\n            \"level\": 3,\n            \"order\": 0,\n            \"estimatedDuration\": 5\n          }\n        ]\n      }\n    ]\n  }\n]\n\nACCESSIBILITY MODE: visual\n\nVISUAL LEARNERS prefer:\n- Diagrams, charts, and infographics\n- Color-coded information\n- Mind maps and visual hierarchies\n- Images and illustrations\n- Spatial organization of content\n\nGenerate slides that:\n1. Cover each topic in the outline\n2. Use appropriate content types for visual learners\n3. Include speaker notes for instructors\n4. Have clear, engaging titles\n\nFor each slide, provide:\n- title: Clear slide title\n- content: Array of content blocks with type and content\n- speakerNotes: Teaching notes for the instructor\n- layout: Appropriate layout (title, content, two-column, diagram)\n- outlineNodeId: Reference to outline node\n\nContent types available:\n- heading: Main headings\n- text: Paragraphs\n- bullet-points: Lists (content as array)\n- diagram: Mermaid diagram code\n- quote: Important quotes\n- code: Code examples\n\nReturn ONLY valid JSON as an array of slides:\n[\n  {\n    \"title\": \"Introduction to Topic\",\n    \"content\": [\n      {\n        \"type\": \"heading\",\n        \"content\": \"Welcome\"\n      },\n      {\n        \"type\": \"text\",\n        \"content\": \"This course covers...\"\n      },\n      {\n        \"type\": \"bullet-points\",\n        \"content\": [\"Point 1\", \"Point 2\", \"Point 3\"]\n      }\n    ],\n    \"speakerNotes\": \"Start with a warm welcome. Ask students about their background.\",\n    \"layout\": \"title\",\n    \"outlineNodeId\": \"node_1\"\n  }\n]"
+    }
+  ]
+}
+```
+
+**Response**
+```json
+{
+    "model": "claude-3-5-haiku-20241022",
+    "id": "msg_01QuYzHb6yPkUGJByJiH613j",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+        {
+            "type": "text",
+            "text": "[\n  {\n    \"title\": \"Introduction to Machine Learning\",\n    \"content\": [\n      {\n        \"type\": \"heading\",\n        \"content\": \"Machine Learning: Transforming Data into Intelligence\"\n      },\n      {\n        \"type\": \"diagram\",\n        \"content\": \"graph TD\n          A[Artificial Intelligence] --> B[Machine Learning]\n          B --> C[Supervised Learning]\n          B --> D[Unsupervised Learning]\n          B --> E[Reinforcement Learning]\"\n      },\n      {\n        \"type\": \"quote\",\n        \"content\": \"Machine Learning: Teaching computers to learn from experience without being explicitly programmed\"\n      }\n    ],\n    \"speakerNotes\": \"Introduce machine learning as a powerful approach to creating intelligent systems that can learn and improve from data.\",\n    \"layout\": \"two-column\",\n    \"outlineNodeId\": \"node_1\"\n  },\n  {\n    \"title\": \"What is Machine Learning?\",\n    \"content\": [\n      {\n        \"type\": \"heading\",\n        \"content\": \"Defining Machine Learning\"\n      },\n      {\n        \"type\": \"bullet-points\",\n        \"content\": [\n          \"A subset of artificial intelligence\",\n          \"Systems that improve through experience\",\n          \"Learn patterns from data automatically\",\n          \"Adapt and make intelligent decisions\"\n        ]\n      },\n      {\n        \"type\": \"diagram\",\n        \"content\": \"flowchart LR\n          A[Raw Data] --> B[Machine Learning Algorithm]\n          B --> C[Learned Patterns]\n          C --> D[Intelligent Predictions]\"\n      }\n    ],\n    \"speakerNotes\": \"Explain how machine learning differs from traditional programming by focusing on learning from data patterns.\",\n    \"layout\": \"two-column\",\n    \"outlineNodeId\": \"node_1_1\"\n  },\n  {\n    \"title\": \"Types of Machine Learning\",\n    \"content\": [\n      {\n        \"type\": \"heading\",\n        \"content\": \"Three Primary Learning Paradigms\"\n      },\n      {\n        \"type\": \"diagram\",\n        \"content\": \"flowchart TD\n          A[Machine Learning Types] --> B[Supervised Learning]\n          A --> C[Unsupervised Learning]\n          A --> D[Reinforcement Learning]\n          \n          B --> B1[Labeled Training Data]\n          B --> B2[Predictive Modeling]\n          \n          C --> C1[Unlabeled Data]\n          C --> C2[Pattern Discovery]\n          \n          D --> D1[Learn through Interaction]\n          D --> D2[Reward-based Learning]\"\n      },\n      {\n        \"type\": \"bullet-points\",\n        \"content\": [\n          \"Supervised Learning: Predictive modeling with labeled data\",\n          \"Unsupervised Learning: Discovering hidden patterns\",\n          \"Reinforcement Learning: Learning through interaction and feedback\"\n        ]\n      }\n    ],\n    \"speakerNotes\": \"Break down the three main types of machine learning, highlighting their unique characteristics and use cases.\",\n    \"layout\": \"diagram\",\n    \"outlineNodeId\": \"node_1_1_1\"\n  }\n]"
+        }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+        "input_tokens": 749,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 767,
+        "service_tier": "standard"
+    }
+}
+```

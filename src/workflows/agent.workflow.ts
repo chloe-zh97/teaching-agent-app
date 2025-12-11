@@ -27,7 +27,12 @@ import {
   getRecommendedVoiceId,
   generateAgentDescription,
 } from '../services/prompt.templates';
-import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
+import {
+  generateOutline,
+  generateSlides
+} from '../services/course-generation.service';
+import { NotFoundError, ValidationError } from '../utils/errors';
+import { Course } from '../models/course.model';
 
 /**
  * Result type for agent creation workflow
@@ -38,21 +43,20 @@ export interface AgentCreationResult {
   status: 'created' | 'exists';
   message: string;
   warnings?: string[];
+  generatedSlides?: boolean;
 }
 
 /**
- * Fetch slides by course ID from external course service
+ * Fetch course from Course API
  */
-async function fetchSlidesByCourseId(courseId: string, c: Env): Promise<Slide[]> {
-  const courseIdfix = "course_1765157269981-f5zl920nu";
-
-  const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseIdfix}/slides`);
+async function fetchCourseFromAPI(courseId: string, c: Env): Promise<Course> {
+  const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseId}`);
 
   if (!response.ok) {
     if (response.status === 404) {
-      throw new NotFoundError(`Slides of ${courseId} not found!`);
+      throw new NotFoundError(`Course ${courseId} not found!`);
     }
-    throw new Error(`Failed to fetch course slides: ${response.statusText}`);
+    throw new Error(`Failed to fetch course: ${response.statusText}`);
   }
 
   const data = await response.json() as any;
@@ -60,20 +64,126 @@ async function fetchSlidesByCourseId(courseId: string, c: Env): Promise<Slide[]>
 }
 
 /**
+ * Fetch slides from Course API
+ */
+async function fetchSlidesFromAPI(courseId: string, c: Env): Promise<Slide[]> {
+  const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseId}/slides`);
 
+  if (!response.ok) {
+    throw new Error(`Failed to fetch slides: ${response.statusText}`);
+  }
+
+  const data = await response.json() as any;
+  return data.data || []; // Assuming response format: { success: true, data: Slide[] }
+}
+
+/**
+ * Create slides via Course API
+ */
+async function createSlidesViaAPI(
+  courseId: string,
+  slides: Slide[],
+  c: Env
+): Promise<Slide[]> {
+  const createdSlides: Slide[] = [];
+
+  for (const slideData of slides) {
+    const response = await fetch(`${c.COURSE_SERVICE_URL}/api/slides`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...slideData,
+        courseId: courseId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to create slide: ${response.statusText}`);
+    }
+
+    const result = await response.json() as any;
+    createdSlides.push(result.data);
+  }
+
+  return createdSlides;
+}
+
+/**
+ * Update course outline via Course API
+ */
+async function updateCourseOutlineViaAPI(
+  courseId: string,
+  outline: any,
+  c: Env
+): Promise<void> {
+  const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseId}/outline`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ outline }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update course outline: ${response.statusText}`);
+  }
+}
+
+/**
+ * Update course agent info via Course API
+ */
+async function updateCourseAgentViaAPI(
+  courseId: string,
+  agentId: string,
+  voiceId: string,
+  c: Env
+): Promise<void> {
+  const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseId}/agent`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      agentId,
+      voiceId,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update course with agent info: ${response.statusText}`);
+  }
+}
+
+/**
+ * Execute agent creation workflow for a course
+ *
+ * This is the MAIN workflow that creates a complete ElevenLabs agent:
+ *
+ * Steps:
+ * 1. ✅ Validate course exists and has slides (via Course API)
+ * 2. ✅ Check if agent already exists (avoid duplicates)
+ * 3. ✅ Fetch all slides for the course (AUTO-GENERATE if missing via Course API)
+ * 4. ✅ Build knowledge base from slides and course content
+ * 5. ✅ Validate knowledge base quality
+ * 6. ✅ Generate system prompt with teaching strategies
+ * 7. ✅ Create ElevenLabs agent via API
+ * 8. ✅ Store agent metadata in KV database
+ * 9. ✅ Update course record with agent ID (via Course API)
+ * 10. ✅ Return result with warnings (if any)
+ *
  * @param courseId - Course ID to create agent for
  * @param teacherId - Teacher who owns the course
  * @param voiceId - Optional ElevenLabs voice ID (uses recommendation if not provided)
- * @param kvCache - Cloudflare KV namespace
- * @param elevenLabsApiKey - ElevenLabs API key from environment
+ * @param c - Environment with KV cache and API keys
  * @returns Agent creation result
  */
 export async function executeAgentCreationWorkflow(
   courseId: string,
   teacherId: string,
   voiceId: string | undefined,
-  kvCache: KvCache,
-  elevenLabsApiKey: string
+  c: Env
 ): Promise<AgentCreationResult> {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`🚀 AGENT CREATION WORKFLOW STARTED`);
@@ -83,21 +193,19 @@ export async function executeAgentCreationWorkflow(
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   // Initialize ElevenLabs client
-  initializeElevenLabsClient(elevenLabsApiKey);
-
-  const courseRepo = new CourseRepository(kvCache);
-  const slideRepo = new SlideRepository(kvCache);
-  const agentRepo = new AgentRepository(kvCache);
+  initializeElevenLabsClient(c.ELEVENLABS_API_KEY);
+  const agentRepo = new AgentRepository(c.KV_CACHE);
+  let slidesWereGenerated = false;
 
   try {
+    // ────────────────────────────────────────────────────────────
+    // STEP 1: Validate course exists (via Course API)
+    // ────────────────────────────────────────────────────────────
     console.log('📚 [1/10] Validating course...');
-    const course = await courseRepo.getById(courseId);
-    if (!course) {
-      throw new NotFoundError(`Course ${courseId} not found`);
-    }
+    const course = await fetchCourseFromAPI(courseId, c);
     console.log(`   ✓ Course found: "${course.title}"`);
 
-// if agent already exists
+    // if agent already exists
     console.log('🔍 [2/10] Checking for existing agent...');
     const existingAgent = await agentRepo.getByCourse(courseId);
 
@@ -116,17 +224,52 @@ export async function executeAgentCreationWorkflow(
     }
     console.log('   ✓ No existing agent found');
 
-
+    // ────────────────────────────────────────────────────────────
+    // STEP 3: Fetch or generate slides (via Course API)
+    // ────────────────────────────────────────────────────────────
     console.log('📄 [3/10] Fetching slides...');
-    const slides = await slideRepo.listByCourse(courseId);
+    let slides = await fetchSlidesFromAPI(courseId, c);
 
     if (!slides || slides.length === 0) {
-      throw new ValidationError(
-        `Cannot create agent: No slides found for course ${courseId}. Please generate slides first using the course workflow.`
-      );
-    }
-    console.log(`   ✓ Found ${slides.length} slides`);
+      console.log('   ⚠️  No slides found - auto-generating from course content...');
 
+      // Check if course has necessary content for generation
+      if (!course.knowledgeText || course.knowledgeText.trim().length === 0) {
+        throw new ValidationError(
+          `Cannot create agent: Course ${courseId} has no slides and no knowledge text to generate from. Please add course content first.`
+        );
+      }
+
+      console.log('   🧠 [3a/10] Generating course outline...');
+      const outline = course.outline
+        ? course.outline
+        : await generateOutline(
+          c,
+          course.knowledgeText,
+          course.concepts || [],
+          course.accessibility || 'visual',
+          course.keywords,
+        );
+      console.log(`   ✓ Generated outline with ${outline.nodes.length} nodes`);
+      await updateCourseOutlineViaAPI(courseId, outline, c);
+      console.log('   ✓ Outline saved to course');
+
+      console.log('   📝 [3b/10] Generating slides from outline...');
+      const generatedSlides = await generateSlides(
+          c,
+          outline.nodes,
+          course.accessibility || 'visual',
+          course.knowledgeText,
+        );
+      console.log(`   ✓ Generated ${generatedSlides.length} slides`);
+
+      console.log('   💾 [3c/10] Saving generated slides...');
+      slides = await createSlidesViaAPI(courseId, generatedSlides, c);
+      console.log(`   ✅ Saved ${slides.length} slides to database`);
+      slidesWereGenerated = true;
+    } else {
+      console.log(`   ✓ Found ${slides.length} existing slides`);
+    }
 
     console.log('📖 [4/10] Building knowledge base...');
     const knowledgeBase = buildKnowledgeBase(course, slides);
@@ -156,7 +299,7 @@ export async function executeAgentCreationWorkflow(
     const agentName = generateAgentName(course);
     const firstMessage = generateFirstMessage(course);
 
-    const normalizedVoiceId = 
+    const normalizedVoiceId =
       !voiceId || voiceId === 'default' || (typeof voiceId === 'string' && voiceId.trim() === '')
         ? undefined
         : voiceId;
@@ -218,11 +361,11 @@ export async function executeAgentCreationWorkflow(
       console.log(`   ✓ Created new agent record: ${agentId}`);
     }
 
+    // ────────────────────────────────────────────────────────────
+    // STEP 10: Update course with agent ID (via Course API)
+    // ────────────────────────────────────────────────────────────
     console.log('📝 [10/10] Updating course record...');
-    await courseRepo.updateAgent(courseId, {
-      agentId,
-      voiceId: selectedVoiceId,
-    });
+    await updateCourseAgentViaAPI(courseId, agentId, selectedVoiceId, c);
     console.log(`   ✓ Course updated with agent ID`);
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -230,15 +373,18 @@ export async function executeAgentCreationWorkflow(
     console.log(`   Internal Agent ID: ${agentId}`);
     console.log(`   ElevenLabs Agent ID: ${elevenLabsAgent.agentId}`);
     console.log(`   Course: ${course.title}`);
-    console.log(`   Slides: ${slides.length}`);
+    console.log(`   Slides: ${slides.length}${slidesWereGenerated ? ' (auto-generated)' : ''}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     return {
       agentId,
       elevenLabsAgentId: elevenLabsAgent.agentId,
       status: 'created',
-      message: 'Agent created successfully',
+      message: slidesWereGenerated
+        ? 'Agent created successfully with auto-generated slides'
+        : 'Agent created successfully',
       warnings: validation.warnings.length > 0 ? validation.warnings : undefined,
+      generatedSlides: slidesWereGenerated,
     };
   } catch (error) {
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -261,32 +407,25 @@ export async function executeAgentCreationWorkflow(
  * This will update the ElevenLabs agent with fresh knowledge base and prompt
  *
  * @param courseId - Course ID
- * @param kvCache - Cloudflare KV namespace
- * @param elevenLabsApiKey - ElevenLabs API key
+ * @param c - Environment with KV cache and API keys
  */
 export async function refreshAgentKnowledgeWorkflow(
   courseId: string,
-  kvCache: KvCache,
-  elevenLabsApiKey: string
+  c: Env
 ): Promise<void> {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`🔄 AGENT KNOWLEDGE REFRESH WORKFLOW STARTED`);
   console.log(`   Course ID: ${courseId}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-  initializeElevenLabsClient(elevenLabsApiKey);
+  initializeElevenLabsClient(c.ELEVENLABS_API_KEY);
 
-  const courseRepo = new CourseRepository(kvCache);
-  const slideRepo = new SlideRepository(kvCache);
-  const agentRepo = new AgentRepository(kvCache);
+  const agentRepo = new AgentRepository(c.KV_CACHE);
 
   try {
-    // Get course
+    // Get course (via Course API)
     console.log('📚 [1/5] Fetching course...');
-    const course = await courseRepo.getById(courseId);
-    if (!course) {
-      throw new NotFoundError(`Course ${courseId} not found`);
-    }
+    const course = await fetchCourseFromAPI(courseId, c);
     console.log(`   ✓ Course: "${course.title}"`);
 
     // Get agent
@@ -300,9 +439,9 @@ export async function refreshAgentKnowledgeWorkflow(
     console.log(`   ✓ Agent ID: ${agent.agentId}`);
     console.log(`   ✓ ElevenLabs ID: ${agent.elevenLabsConfig.agentId}`);
 
-    // Get updated slides
+    // Get updated slides (via Course API)
     console.log('📄 [3/5] Fetching updated slides...');
-    const slides = await slideRepo.listByCourse(courseId);
+    const slides = await fetchSlidesFromAPI(courseId, c);
     if (!slides || slides.length === 0) {
       throw new ValidationError(`No slides found for course ${courseId}`);
     }
@@ -344,26 +483,23 @@ export async function refreshAgentKnowledgeWorkflow(
  * This will:
  * 1. Delete the agent from ElevenLabs
  * 2. Delete the agent record from database
- * 3. Update the course to remove agent reference
+ * 3. Update the course to remove agent reference (via Course API)
  *
  * @param agentId - Internal agent ID
- * @param kvCache - Cloudflare KV namespace
- * @param elevenLabsApiKey - ElevenLabs API key
+ * @param c - Environment with KV cache and API keys
  */
 export async function deleteAgentWorkflow(
   agentId: string,
-  kvCache: KvCache,
-  elevenLabsApiKey: string
+  c: Env
 ): Promise<void> {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`🗑️  AGENT DELETION WORKFLOW STARTED`);
   console.log(`   Agent ID: ${agentId}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-  initializeElevenLabsClient(elevenLabsApiKey);
+  initializeElevenLabsClient(c.ELEVENLABS_API_KEY);
 
-  const agentRepo = new AgentRepository(kvCache);
-  const courseRepo = new CourseRepository(kvCache);
+  const agentRepo = new AgentRepository(c.KV_CACHE);
 
   try {
     // Get agent
@@ -388,14 +524,15 @@ export async function deleteAgentWorkflow(
     await agentRepo.delete(agentId);
     console.log(`   ✅ Deleted from database`);
 
-    // Update course to remove agent reference
-    const course = await courseRepo.getById(agent.courseId);
-    if (course && course.agentId === agentId) {
-      await courseRepo.updateAgent(agent.courseId, {
-        agentId: undefined,
-        voiceId: course.voiceId,
-      });
-      console.log(`   ✅ Removed agent reference from course`);
+    // Update course to remove agent reference (via Course API)
+    try {
+      const course = await fetchCourseFromAPI(agent.courseId, c);
+      if (course && course.agentId === agentId) {
+        await updateCourseAgentViaAPI(agent.courseId, '', course.voiceId || '', c);
+        console.log(`   ✅ Removed agent reference from course`);
+      }
+    } catch (error) {
+      console.log(`   ⚠️  Could not update course (may have been deleted)`);
     }
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -422,19 +559,17 @@ export async function deleteAgentWorkflow(
  * @param courseId - Course ID
  * @param teacherId - Teacher ID
  * @param voiceId - Optional new voice ID
- * @param kvCache - Cloudflare KV namespace
- * @param elevenLabsApiKey - ElevenLabs API key
+ * @param c - Environment with KV cache and API keys
  */
 export async function recreateAgentWorkflow(
   courseId: string,
   teacherId: string,
   voiceId: string | undefined,
-  kvCache: KvCache,
-  elevenLabsApiKey: string
+  c: Env
 ): Promise<AgentCreationResult> {
   console.log('🔄 Recreating agent for course:', courseId);
 
-  const agentRepo = new AgentRepository(kvCache);
+  const agentRepo = new AgentRepository(c.KV_CACHE);
 
   try {
     // Find and delete old agent
@@ -442,12 +577,17 @@ export async function recreateAgentWorkflow(
 
     if (existingAgent) {
       console.log(`   Deleting old agent: ${existingAgent.agentId}`);
-      await deleteAgentWorkflow(existingAgent.agentId, kvCache, elevenLabsApiKey);
+      await deleteAgentWorkflow(existingAgent.agentId, c);
     }
 
     // Create new agent
     console.log('   Creating new agent...');
-    return await executeAgentCreationWorkflow(courseId, teacherId, voiceId, kvCache, elevenLabsApiKey);
+    return await executeAgentCreationWorkflow(
+      courseId,
+      teacherId,
+      voiceId,
+      c
+    );
   } catch (error) {
     console.error('❌ Recreate workflow failed:', error);
     throw error;

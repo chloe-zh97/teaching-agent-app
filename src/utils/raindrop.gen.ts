@@ -12,5 +12,6 @@ export interface Env {
   mem: KvCache;
   tracer: Tracer;
   ELEVENLABS_API_KEY: string; // ElevenLabs API key for conversational AI
+  ANTHROPIC_API_KEY: string; // Anthropic API key for slide generation
   COURSE_SERVICE_URL: string; // Course service URL for fetching slides
 }

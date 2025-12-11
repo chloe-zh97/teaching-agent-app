@@ -337,7 +337,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1764202647173-1lzlq4fe8",
+							"raw": "svc-01kb16fwyhq3gzt54bkf2v75mk.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1765157269981-f5zl920nu",
 							"host": [
 								"svc-01kb16fwyhq3gzt54bkf2v75mk",
 								"01karqzwhx6azztkab3ppk0vq6",
@@ -347,7 +347,7 @@
 							"path": [
 								"api",
 								"courses",
-								"course_1764202647173-1lzlq4fe8"
+								"course_1765157269981-f5zl920nu"
 							]
 						}
 					},
@@ -598,6 +598,111 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "List all slides of a course",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kby5q2y1m2a8yg5g7mygmne3.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1765157269981-f5zl920nu/slides",
+							"host": [
+								"svc-01kby5q2y1m2a8yg5g7mygmne3",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1765157269981-f5zl920nu",
+								"slides"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get slide by course and order position",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_123/slides/1",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_123",
+								"slides",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reorder slides in a course",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"slideOrders\": [\n    { \"slideId\": \"slide_1764217455952-o6nsowqov\", \"newOrder\": 0 },\n    { \"slideId\": \"slide_1764217440857-qfvgahxj6\", \"newOrder\": 1 }\n  ]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course-reorder-01/slides/reorder",
+							"host": [
+								"svc-01kb1p294enszymycg23hz2080",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course-reorder-01",
+								"slides",
+								"reorder"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get total slide count for a course",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "svc-01kbv56m0ejxavjdshaq870k6f.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course-reorder-01/of/slides/count",
+							"host": [
+								"svc-01kbv56m0ejxavjdshaq870k6f",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course-reorder-01",
+								"of",
+								"slides",
+								"count"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -671,9 +776,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/slides/slide_1764216125732-0wohuch5h",
+							"raw": "svc-01kbz90npdbxdjgq3wvr8fjg2q.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/slides/slide_1764216125732-0wohuch5h",
 							"host": [
-								"svc-01kb1p294enszymycg23hz2080",
+								"svc-01kbz90npdbxdjgq3wvr8fjg2q",
 								"01karqzwhx6azztkab3ppk0vq6",
 								"lmapp",
 								"run"
@@ -688,61 +793,14 @@
 					"response": []
 				},
 				{
-					"name": "List all slides of a course",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course-reorder-01/slides",
-							"host": [
-								"svc-01kb1p294enszymycg23hz2080",
-								"01karqzwhx6azztkab3ppk0vq6",
-								"lmapp",
-								"run"
-							],
-							"path": [
-								"api",
-								"courses",
-								"course-reorder-01",
-								"slides"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get slide by course and order position",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_123/slides/1",
-							"host": [
-								"svc-01kb1p294enszymycg23hz2080",
-								"01karqzwhx6azztkab3ppk0vq6",
-								"lmapp",
-								"run"
-							],
-							"path": [
-								"api",
-								"courses",
-								"course_123",
-								"slides",
-								"1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "List slides by outline node",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/outline-nodes/node_1_1/slides",
+							"raw": "svc-01kbz90npdbxdjgq3wvr8fjg2q.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/outline-nodes/node_1_1/slides",
 							"host": [
-								"svc-01kb1p294enszymycg23hz2080",
+								"svc-01kbz90npdbxdjgq3wvr8fjg2q",
 								"01karqzwhx6azztkab3ppk0vq6",
 								"lmapp",
 								"run"
@@ -783,39 +841,6 @@
 								"api",
 								"slides",
 								"slide_1764216125732-0wohuch5h"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Reorder slides in a course",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"slideOrders\": [\n    { \"slideId\": \"slide_1764217455952-o6nsowqov\", \"newOrder\": 0 },\n    { \"slideId\": \"slide_1764217440857-qfvgahxj6\", \"newOrder\": 1 }\n  ]\n}\n",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course-reorder-01/slides/reorder",
-							"host": [
-								"svc-01kb1p294enszymycg23hz2080",
-								"01karqzwhx6azztkab3ppk0vq6",
-								"lmapp",
-								"run"
-							],
-							"path": [
-								"api",
-								"courses",
-								"course-reorder-01",
-								"slides",
-								"reorder"
 							]
 						}
 					},
@@ -870,31 +895,6 @@
 								"api",
 								"slides",
 								"slide_1764218754269-9yfkjlfnw"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get total slide count for a course",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "svc-01kb1p294enszymycg23hz2080.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course-reorder-01/of/slides/count",
-							"host": [
-								"svc-01kb1p294enszymycg23hz2080",
-								"01karqzwhx6azztkab3ppk0vq6",
-								"lmapp",
-								"run"
-							],
-							"path": [
-								"api",
-								"courses",
-								"course-reorder-01",
-								"of",
-								"slides",
-								"count"
 							]
 						}
 					},
@@ -1793,6 +1793,162 @@
 								"agents",
 								"{{agentId}}",
 								"refresh-knowledge"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Workflow",
+			"item": [
+				{
+					"name": "Generate outline",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-api-key",
+								"value": "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",
+								"type": "text"
+							},
+							{
+								"key": "anthropic-version",
+								"value": "2023-06-01",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"model\": \"claude-3-5-haiku-latest\",\n  \"max_tokens\": 300,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Generate outline of Machine learning.\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.anthropic.com/v1/messages",
+							"protocol": "https",
+							"host": [
+								"api",
+								"anthropic",
+								"com"
+							],
+							"path": [
+								"v1",
+								"messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Generate slides",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-api-key",
+								"value": "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",
+								"type": "text"
+							},
+							{
+								"key": "anthropic-version",
+								"value": "2023-06-01",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"model\": \"claude-3-5-haiku-latest\",\n  \"max_tokens\": 8000,\n  \"temperature\": 0.7,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"You are a course content creator. Generate presentation slides based on this course outline.\\n\\nCOURSE CONTEXT:\\nMachine learning is a subset of artificial intelligence that focuses on building systems that can learn from data. Key concepts include supervised learning, unsupervised learning, and reinforcement learning. Neural networks are a fundamental building block, and gradient descent is the primary optimization algorithm used.\\n\\nOUTLINE:\\n[\\n  {\\n    \\\"id\\\": \\\"node_1\\\",\\n    \\\"title\\\": \\\"Introduction to Machine Learning\\\",\\n    \\\"description\\\": \\\"Comprehensive overview of machine learning as a core artificial intelligence discipline. Explore the fundamental concepts and significance of learning systems.\\\",\\n    \\\"level\\\": 1,\\n    \\\"order\\\": 0,\\n    \\\"estimatedDuration\\\": 30,\\n    \\\"children\\\": [\\n      {\\n        \\\"id\\\": \\\"node_1_1\\\",\\n        \\\"title\\\": \\\"What is Machine Learning?\\\",\\n        \\\"description\\\": \\\"Define machine learning and its relationship to artificial intelligence. Explain how systems learn from data and adapt their performance.\\\",\\n        \\\"level\\\": 2,\\n        \\\"order\\\": 0,\\n        \\\"estimatedDuration\\\": 10,\\n        \\\"children\\\": [\\n          {\\n            \\\"id\\\": \\\"node_1_1_1\\\",\\n            \\\"title\\\": \\\"Types of Machine Learning\\\",\\n            \\\"description\\\": \\\"Explore supervised, unsupervised, and reinforcement learning paradigms. Understand the key differences and use cases.\\\",\\n            \\\"level\\\": 3,\\n            \\\"order\\\": 0,\\n            \\\"estimatedDuration\\\": 5\\n          }\\n        ]\\n      }\\n    ]\\n  }\\n]\\n\\nACCESSIBILITY MODE: visual\\n\\nVISUAL LEARNERS prefer:\\n- Diagrams, charts, and infographics\\n- Color-coded information\\n- Mind maps and visual hierarchies\\n- Images and illustrations\\n- Spatial organization of content\\n\\nGenerate slides that:\\n1. Cover each topic in the outline\\n2. Use appropriate content types for visual learners\\n3. Include speaker notes for instructors\\n4. Have clear, engaging titles\\n\\nFor each slide, provide:\\n- title: Clear slide title\\n- content: Array of content blocks with type and content\\n- speakerNotes: Teaching notes for the instructor\\n- layout: Appropriate layout (title, content, two-column, diagram)\\n- outlineNodeId: Reference to outline node\\n\\nContent types available:\\n- heading: Main headings\\n- text: Paragraphs\\n- bullet-points: Lists (content as array)\\n- diagram: Mermaid diagram code\\n- quote: Important quotes\\n- code: Code examples\\n\\nReturn ONLY valid JSON as an array of slides:\\n[\\n  {\\n    \\\"title\\\": \\\"Introduction to Topic\\\",\\n    \\\"content\\\": [\\n      {\\n        \\\"type\\\": \\\"heading\\\",\\n        \\\"content\\\": \\\"Welcome\\\"\\n      },\\n      {\\n        \\\"type\\\": \\\"text\\\",\\n        \\\"content\\\": \\\"This course covers...\\\"\\n      },\\n      {\\n        \\\"type\\\": \\\"bullet-points\\\",\\n        \\\"content\\\": [\\\"Point 1\\\", \\\"Point 2\\\", \\\"Point 3\\\"]\\n      }\\n    ],\\n    \\\"speakerNotes\\\": \\\"Start with a warm welcome. Ask students about their background.\\\",\\n    \\\"layout\\\": \\\"title\\\",\\n    \\\"outlineNodeId\\\": \\\"node_1\\\"\\n  }\\n]\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.anthropic.com/v1/messages",
+							"protocol": "https",
+							"host": [
+								"api",
+								"anthropic",
+								"com"
+							],
+							"path": [
+								"v1",
+								"messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Call Claude AI generate outline",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "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",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "anthropic-version",
+								"value": "2023-06-01",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"agentId\": \"agentId\",\n    \"voiceId\": \"default\",\n    \"teacherId\":\"teacher01\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "svc-01kby5q2y1m2a8yg5g7mygmne3.01karqzwhx6azztkab3ppk0vq6.lmapp.run/api/courses/course_1765157269981-f5zl920nu/agent",
+							"host": [
+								"svc-01kby5q2y1m2a8yg5g7mygmne3",
+								"01karqzwhx6azztkab3ppk0vq6",
+								"lmapp",
+								"run"
+							],
+							"path": [
+								"api",
+								"courses",
+								"course_1765157269981-f5zl920nu",
+								"agent"
 							]
 						}
 					},
