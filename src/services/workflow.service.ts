@@ -1,9 +1,9 @@
 import { AgentRepository } from "../repositories/agent.repository";
 import { CourseRepository } from "../repositories/course.repository";
 import { SlideRepository } from "../repositories/slide.repository";
-import { createConversationalAgent, initializeElevenLabsClient } from "./elevenlabs-integration.service";
+import { createConversationalAgent, deleteConversationalAgent, initializeElevenLabsClient, updateConversationalAgent } from "./elevenlabs-integration.service";
 import { AgentCreationResult } from "../models/agent.model";
-import { ValidationError } from "../utils/errors";
+import { NotFoundError, ValidationError } from "../utils/errors";
 import { buildAgentSystemPrompt, buildKnowledgeBase, generateAgentDescription, generateAgentName, generateFirstMessage, getRecommendedVoiceId, validateKnowledgeBase } from "../utils/prompt.templates";
 import { generateOutline, generateSlides } from "./claude-integration.service";
 import { Env } from "../utils/raindrop.gen";
@@ -284,3 +284,202 @@ export async function executeAgentCreationWorkflow(
   }
 }
 
+/**
+ * Refresh agent knowledge base workflow
+ *
+ * Use this when:
+ * - Course content has been updated
+ * - Slides have been added/removed/modified
+ * - Teaching strategy needs adjustment
+ *
+ * This will update the ElevenLabs agent with fresh knowledge base and prompt
+ *
+ * @param courseId - Course ID
+ * @param c - Environment with KV cache and API keys
+ */
+export async function refreshAgentKnowledgeWorkflow(
+  courseId: string,
+  c: Env
+): Promise<void> {
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`🔄 AGENT KNOWLEDGE REFRESH WORKFLOW STARTED`);
+  console.log(`   Course ID: ${courseId}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  initializeElevenLabsClient(c.ELEVENLABS_API_KEY);
+  const courseRepo = new CourseRepository(c.mem);
+  const slideRepo = new SlideRepository(c.mem);
+  const agentRepo = new AgentRepository(c.mem);
+
+  try {
+    // Get course (via Course API)
+    console.log('📚 [1/5] Fetching course...');
+    const course = await courseRepo.getById(courseId);
+    console.log(`   ✓ Course: "${course.title}"`);
+
+    // Get agent
+    console.log('🤖 [2/5] Fetching agent...');
+    const agent = await agentRepo.getByCourse(courseId);
+    if (!agent || !agent.elevenLabsConfig.agentId) {
+      throw new NotFoundError(
+        `No active agent found for course ${courseId}. Create an agent first.`
+      );
+    }
+    console.log(`   ✓ Agent ID: ${agent.agentId}`);
+    console.log(`   ✓ ElevenLabs ID: ${agent.elevenLabsConfig.agentId}`);
+
+    // Get updated slides (via Course API)
+    console.log('📄 [3/5] Fetching updated slides...');
+    const slides = await slideRepo.listByCourse(courseId);
+    if (!slides || slides.length === 0) {
+      throw new ValidationError(`No slides found for course ${courseId}`);
+    }
+    console.log(`   ✓ Found ${slides.length} slides`);
+
+    // Rebuild knowledge base and prompt
+    console.log('🔨 [4/5] Rebuilding knowledge base and prompt...');
+    const knowledgeBase = buildKnowledgeBase(course, slides);
+    const systemPrompt = buildAgentSystemPrompt(course, slides, knowledgeBase);
+    console.log(`   ✓ Knowledge base: ${knowledgeBase.length} chars`);
+    console.log(`   ✓ System prompt: ${systemPrompt.length} chars`);
+
+    // Update ElevenLabs agent
+    console.log('☁️  [5/5] Updating ElevenLabs agent...');
+    await updateConversationalAgent(agent.elevenLabsConfig.agentId, {
+      systemPrompt,
+    });
+    console.log(`   ✅ ElevenLabs agent updated`);
+
+    // Update agent metadata in database
+    await agentRepo.refreshKnowledge(agent.agentId);
+    console.log(`   ✅ Database metadata updated`);
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ AGENT KNOWLEDGE REFRESH COMPLETED');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  } catch (error) {
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('❌ AGENT KNOWLEDGE REFRESH FAILED');
+    console.error(`   Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    throw error;
+  }
+}
+
+
+/**
+ * Delete agent workflow (complete cleanup)
+ *
+ * This will:
+ * 1. Delete the agent from ElevenLabs
+ * 2. Delete the agent record from database
+ * 3. Update the course to remove agent reference (via Course API)
+ *
+ * @param agentId - Internal agent ID
+ * @param c - Environment with KV cache and API keys
+ */
+export async function deleteAgentWorkflow(
+  agentId: string,
+  c: Env
+): Promise<void> {
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`🗑️  AGENT DELETION WORKFLOW STARTED`);
+  console.log(`   Agent ID: ${agentId}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  initializeElevenLabsClient(c.ELEVENLABS_API_KEY);
+
+  const agentRepo = new AgentRepository(c.mem);
+  const courseRepo = new CourseRepository(c.mem);
+
+  try {
+    // Get agent
+    console.log('🔍 [1/3] Fetching agent...');
+    const agent = await agentRepo.getById(agentId);
+    if (!agent) {
+      throw new NotFoundError(`Agent ${agentId} not found`);
+    }
+    console.log(`   ✓ Agent found for course: ${agent.courseId}`);
+
+    // Delete from ElevenLabs if exists
+    if (agent.elevenLabsConfig.agentId) {
+      console.log('☁️  [2/3] Deleting from ElevenLabs...');
+      await deleteConversationalAgent(agent.elevenLabsConfig.agentId);
+      console.log(`   ✅ Deleted from ElevenLabs`);
+    } else {
+      console.log('   ⚠️  No ElevenLabs agent ID (skipping external deletion)');
+    }
+
+    // Delete from database
+    console.log('💾 [3/3] Deleting from database...');
+    await agentRepo.delete(agentId);
+    console.log(`   ✅ Deleted from database`);
+
+    // Update course to remove agent reference (via Course API)
+    const course = await courseRepo.getById(agent.courseId);
+    if (course && course.agentId === agentId) {
+      await courseRepo.updateAgent(agent.courseId, {
+        agentId: undefined,
+        voiceId: course.voiceId,
+      });
+      console.log(`   ✅ Removed agent reference from course`);
+    }
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ AGENT DELETION WORKFLOW COMPLETED');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  } catch (error) {
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('❌ AGENT DELETION WORKFLOW FAILED');
+    console.error(`   Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    throw error;
+  }
+}
+
+/**
+ * Recreate agent workflow
+ *
+ * Use this to completely recreate an agent from scratch
+ * Useful when you need to:
+ * - Change voice ID
+ * - Fix a broken agent
+ * - Start fresh after major course changes
+ *
+ * @param courseId - Course ID
+ * @param teacherId - Teacher ID
+ * @param voiceId - Optional new voice ID
+ * @param c - Environment with KV cache and API keys
+ */
+export async function recreateAgentWorkflow(
+  courseId: string,
+  teacherId: string,
+  voiceId: string | undefined,
+  c: Env
+): Promise<AgentCreationResult> {
+  console.log('🔄 Recreating agent for course:', courseId);
+
+  const agentRepo = new AgentRepository(c.mem);
+
+  try {
+    // Find and delete old agent
+    const existingAgent = await agentRepo.getByCourse(courseId);
+
+    if (existingAgent) {
+      console.log(`   Deleting old agent: ${existingAgent.agentId}`);
+      await deleteAgentWorkflow(existingAgent.agentId, c);
+    }
+
+    // Create new agent
+    console.log('   Creating new agent...');
+    return await executeAgentCreationWorkflow(
+      courseId,
+      teacherId,
+      voiceId,
+      c
+    );
+  } catch (error) {
+    console.error('❌ Recreate workflow failed:', error);
+    throw error;
+  }
+}

@@ -19,7 +19,7 @@ application "teaching-agent-backend-v2" {
     secret = true
   }
 
-  service "workflow-api" {
+  service "course-api" {
     visibility = "public"
   }
 }

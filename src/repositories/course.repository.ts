@@ -278,8 +278,10 @@ export class CourseRepository {
     };
 
     const courseKey = `${this.COURSE_PREFIX}${courseId}`;
-    await this.kv.put(courseKey, JSON.stringify(updatedCourse));
-
+      await this.kv.put(courseKey, JSON.stringify(updatedCourse));
+    
+    // const res = await this.kv.get(courseKey);
+    // console.log("res=", res);
     return updatedCourse;
   }
 

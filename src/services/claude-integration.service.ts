@@ -31,7 +31,7 @@ export async function generateOutline(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        //'x-api-key': c.ANTHROPIC_API_KEY,
+        'x-api-key': c.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -94,7 +94,7 @@ export async function generateSlides(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        //'x-api-key': c.ANTHROPIC_API_KEY,
+        'x-api-key': c.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
