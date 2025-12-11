@@ -107,8 +107,14 @@ export async function createConversationalAgent(
   name: string;
 }> {
   try {
+    // Validate and normalize voice ID (never allow "default" as a literal value)
+    const voiceId = 
+      !config.voiceId || config.voiceId === 'default' || (typeof config.voiceId === 'string' && config.voiceId.trim() === '')
+        ? '21m00Tcm4TlvDq8ikWAM' 
+        : config.voiceId;
+
     console.log(`🎙️  Creating ElevenLabs agent: ${config.name}`);
-    console.log(`   Voice ID: ${config.voiceId || 'default'}`);
+    console.log(`   Voice ID: ${voiceId}`);
     console.log(`   System prompt length: ${config.systemPrompt.length} chars`);
 
     // Create agent via ElevenLabs REST API
@@ -123,7 +129,7 @@ export async function createConversationalAgent(
           language: config.language || 'en',
         },
         tts: {
-          voice_id: config.voiceId || '21m00Tcm4TlvDq8ikWAM', // Default: Rachel voice
+          voice_id: voiceId,
           speed: config.conversationConfig?.ttsSpeed || 1.0,
         },
       },
@@ -204,10 +210,15 @@ export async function updateConversationalAgent(
       }
 
       if (updates.voiceId !== undefined) {
+        const normalizedVoiceId = 
+          !updates.voiceId || updates.voiceId === 'default' || (typeof updates.voiceId === 'string' && updates.voiceId.trim() === '')
+            ? '21m00Tcm4TlvDq8ikWAM' // Default: Rachel voice
+            : updates.voiceId;
+        
         updatePayload.conversation_config.tts = {
-          voice_id: updates.voiceId,
+          voice_id: normalizedVoiceId,
         };
-        console.log(`   Updated voice ID: ${updates.voiceId}`);
+        console.log(`   Updated voice ID: ${normalizedVoiceId}`);
       }
     }
 

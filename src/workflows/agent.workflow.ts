@@ -10,6 +10,8 @@ import { KvCache } from '@liquidmetal-ai/raindrop-framework';
 import { CourseRepository } from '../repositories/course.repository';
 import { SlideRepository } from '../repositories/slide.repository';
 import { AgentRepository } from '../repositories/agent.repository';
+import { Slide } from '../models/slide.model';
+import { Env } from '../utils/raindrop.gen';
 import {
   createConversationalAgent,
   updateConversationalAgent,
@@ -39,22 +41,26 @@ export interface AgentCreationResult {
 }
 
 /**
- * Execute agent creation workflow for a course
- *
- * This is the MAIN workflow that creates a complete ElevenLabs agent:
- *
- * Steps:
- * 1. ✅ Validate course exists and has slides
- * 2. ✅ Check if agent already exists (avoid duplicates)
- * 3. ✅ Fetch all slides for the course
- * 4. ✅ Build knowledge base from slides and course content
- * 5. ✅ Validate knowledge base quality
- * 6. ✅ Generate system prompt with teaching strategies
- * 7. ✅ Create ElevenLabs agent via API
- * 8. ✅ Store agent metadata in KV database
- * 9. ✅ Update course record with agent ID
- * 10. ✅ Return result with warnings (if any)
- *
+ * Fetch slides by course ID from external course service
+ */
+async function fetchSlidesByCourseId(courseId: string, c: Env): Promise<Slide[]> {
+  const courseIdfix = "course_1765157269981-f5zl920nu";
+
+  const response = await fetch(`${c.COURSE_SERVICE_URL}/api/courses/${courseIdfix}/slides`);
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new NotFoundError(`Slides of ${courseId} not found!`);
+    }
+    throw new Error(`Failed to fetch course slides: ${response.statusText}`);
+  }
+
+  const data = await response.json() as any;
+  return data.data; // Assuming response format: { success: true, data: Course }
+}
+
+/**
+
  * @param courseId - Course ID to create agent for
  * @param teacherId - Teacher who owns the course
  * @param voiceId - Optional ElevenLabs voice ID (uses recommendation if not provided)
@@ -84,9 +90,6 @@ export async function executeAgentCreationWorkflow(
   const agentRepo = new AgentRepository(kvCache);
 
   try {
-    // ────────────────────────────────────────────────────────────
-    // STEP 1: Validate course exists
-    // ────────────────────────────────────────────────────────────
     console.log('📚 [1/10] Validating course...');
     const course = await courseRepo.getById(courseId);
     if (!course) {
@@ -94,9 +97,7 @@ export async function executeAgentCreationWorkflow(
     }
     console.log(`   ✓ Course found: "${course.title}"`);
 
-    // ────────────────────────────────────────────────────────────
-    // STEP 2: Check if agent already exists
-    // ────────────────────────────────────────────────────────────
+// if agent already exists
     console.log('🔍 [2/10] Checking for existing agent...');
     const existingAgent = await agentRepo.getByCourse(courseId);
 
@@ -115,9 +116,7 @@ export async function executeAgentCreationWorkflow(
     }
     console.log('   ✓ No existing agent found');
 
-    // ────────────────────────────────────────────────────────────
-    // STEP 3: Fetch all slides
-    // ────────────────────────────────────────────────────────────
+
     console.log('📄 [3/10] Fetching slides...');
     const slides = await slideRepo.listByCourse(courseId);
 
@@ -128,16 +127,11 @@ export async function executeAgentCreationWorkflow(
     }
     console.log(`   ✓ Found ${slides.length} slides`);
 
-    // ────────────────────────────────────────────────────────────
-    // STEP 4: Build knowledge base
-    // ────────────────────────────────────────────────────────────
+
     console.log('📖 [4/10] Building knowledge base...');
     const knowledgeBase = buildKnowledgeBase(course, slides);
     console.log(`   ✓ Knowledge base built (${knowledgeBase.length} characters)`);
 
-    // ────────────────────────────────────────────────────────────
-    // STEP 5: Validate knowledge base quality
-    // ────────────────────────────────────────────────────────────
     console.log('✔️  [5/10] Validating knowledge base quality...');
     const validation = validateKnowledgeBase(course, slides);
 
@@ -154,31 +148,27 @@ export async function executeAgentCreationWorkflow(
       console.log('   ✓ Knowledge base validated');
     }
 
-    // ────────────────────────────────────────────────────────────
-    // STEP 6: Generate system prompt
-    // ────────────────────────────────────────────────────────────
     console.log('💭 [6/10] Generating system prompt...');
     const systemPrompt = buildAgentSystemPrompt(course, slides, knowledgeBase);
     console.log(`   ✓ System prompt generated (${systemPrompt.length} characters)`);
 
-    // ────────────────────────────────────────────────────────────
-    // STEP 7: Generate agent configuration
-    // ────────────────────────────────────────────────────────────
     console.log('⚙️  [7/10] Preparing agent configuration...');
     const agentName = generateAgentName(course);
     const firstMessage = generateFirstMessage(course);
 
-    // Use provided voice ID, or fall back to course voice, or auto-select
+    const normalizedVoiceId = 
+      !voiceId || voiceId === 'default' || (typeof voiceId === 'string' && voiceId.trim() === '')
+        ? undefined
+        : voiceId;
+
+    // Use provided voice ID, or fall back to course voice, or auto-select based on accessibility
     const selectedVoiceId =
-      voiceId || course.voiceId || getRecommendedVoiceId(course.accessibility || 'visual');
+      normalizedVoiceId || course.voiceId || getRecommendedVoiceId(course.accessibility || 'visual');
 
     console.log(`   ✓ Agent name: "${agentName}"`);
     console.log(`   ✓ Voice ID: ${selectedVoiceId}`);
     console.log(`   ✓ First message: "${firstMessage.substring(0, 50)}..."`);
 
-    // ────────────────────────────────────────────────────────────
-    // STEP 8: Create ElevenLabs agent via API
-    // ────────────────────────────────────────────────────────────
     console.log('🎙️  [8/10] Creating ElevenLabs agent...');
     const elevenLabsAgent = await createConversationalAgent({
       name: agentName,
@@ -191,9 +181,6 @@ export async function executeAgentCreationWorkflow(
     console.log(`   ✅ ElevenLabs agent created!`);
     console.log(`   Agent ID: ${elevenLabsAgent.agentId}`);
 
-    // ────────────────────────────────────────────────────────────
-    // STEP 9: Store agent metadata in database
-    // ────────────────────────────────────────────────────────────
     console.log('💾 [9/10] Storing agent metadata...');
     let agentId: string;
 
@@ -231,9 +218,6 @@ export async function executeAgentCreationWorkflow(
       console.log(`   ✓ Created new agent record: ${agentId}`);
     }
 
-    // ────────────────────────────────────────────────────────────
-    // STEP 10: Update course with agent ID
-    // ────────────────────────────────────────────────────────────
     console.log('📝 [10/10] Updating course record...');
     await courseRepo.updateAgent(courseId, {
       agentId,

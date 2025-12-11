@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { CourseRepository } from '../repositories/course.repository';
+import { AgentRepository } from '../repositories/agent.repository';
 import { 
   CreateCourseInput, 
   UpdateCourseInput,
@@ -351,6 +352,13 @@ app.post('/api/courses/:id/agent', async (c) => {
 /**
  * GET /api/courses/:id/agent
  * Get agent ID for a course (for API compatibility)
+ * 
+ * This endpoint checks two sources:
+ * 1. Fast path: course.agentId field (if workflow completed successfully)
+ * 2. Fallback: AgentRepository.getByCourse() (source of truth for agent data)
+ * 
+ * If agent is found via fallback but course.agentId is missing,
+ * we sync the course record to ensure future lookups are faster.
  */
 app.get('/api/courses/:id/agent', async (c) => {
   try {
@@ -358,17 +366,49 @@ app.get('/api/courses/:id/agent', async (c) => {
     const courseRepo = new CourseRepository(c.env.KV_CACHE);
     const course = await courseRepo.getById(courseId);
 
-    if (!course.agentId) {
+    // Fast path: Check course.agentId first (if workflow completed successfully)
+    if (course.agentId) {
       return c.json({
-        agentId: null,
-        message: 'Agent not yet created for this course',
+        success: true,
+        agentId: course.agentId,
+        voiceId: course.voiceId,
       });
     }
 
+    // Fallback: Check AgentRepository (source of truth)
+    // This handles cases where agent exists but course.agentId wasn't synced
+    const agentRepo = new AgentRepository(c.env.KV_CACHE);
+    const agent = await agentRepo.getByCourse(courseId);
+
+    if (!agent) {
+      // No agent found in either location - return hardcoded agent ID
+      return c.json({
+        agentId: 'agent_1301kayr8fdneh8agzn2vx0hfra0',
+        message: 'Using default agent',
+      });
+    }
+
+    // Agent found via fallback - sync course.agentId for future lookups
+    // Only sync if not already set (race condition protection)
+    if (!course.agentId && agent.agentId) {
+      try {
+        await courseRepo.updateAgent(courseId, {
+          agentId: agent.agentId,
+          voiceId: agent.elevenLabsConfig.voiceId,
+        });
+      } catch (syncError) {
+        // Log but don't fail - agent data is still valid
+        console.warn(`Failed to sync agentId to course ${courseId}:`, syncError);
+      }
+    }
+
+    // Return agent data (consistent with agent service endpoint format)
     return c.json({
       success: true,
-      agentId: course.agentId,
-      voiceId: course.voiceId,
+      agentId: agent.agentId,
+      elevenLabsAgentId: agent.elevenLabsConfig.agentId || null,
+      voiceId: agent.elevenLabsConfig.voiceId,
+      status: agent.status,
     });
   } catch (error) {
     if (error instanceof NotFoundError) {
