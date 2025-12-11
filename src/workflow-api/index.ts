@@ -8,7 +8,8 @@ export default class ApiGateway extends Service<Env> {
     // Route to appropriate handler
     if (url.pathname === '/users') {
       // Call private service for business logic
-      const users = await this.env.USER_SERVICE.getUserById('userId');
+      const users = "users";
+      // const users = await this.env.USER_SERVICE.getUserById('userId');
       return new Response(JSON.stringify(users), {
         headers: { 'Content-Type': 'application/json' }
       });
