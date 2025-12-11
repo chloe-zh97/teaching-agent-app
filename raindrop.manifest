@@ -6,7 +6,7 @@
 application "teaching-agent-app" {
 
   service "user" {
-    visibility = "public"
+    visibility = "private"
   }
 
   service "course" {
@@ -18,20 +18,30 @@ application "teaching-agent-app" {
   }
 
   service "session" {
-    visibility = "public"
+    visibility = "private"
   }
 
   service "interaction" {
-    visibility = "public"
+    visibility = "private"
   }
 
   service "agent" {
-    visibility = "public"
+    visibility = "private"
   }
 
   service "transcription" {
-    visibility = "public"
+    visibility = "private"
   }
 
   kv_cache "kv_cache" {}
+
+  env "ANTHROPIC_API_KEY" {
+    secret = true
+  }
+
+  env "ELEVENLABS_API_KEY" {
+    secret = true
+  }
+
+  env "COURSE_SERVICE_URL" {}
 }
