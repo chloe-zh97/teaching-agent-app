@@ -1,3 +1,4 @@
+// workflow.service.ts
 import { AgentRepository } from "../repositories/agent.repository";
 import { CourseRepository } from "../repositories/course.repository";
 import { SlideRepository } from "../repositories/slide.repository";
@@ -90,53 +91,11 @@ export async function executeAgentCreationWorkflow(
     let slides = await slideRepo.listByCourse(courseId);
 
     if (!slides || slides.length === 0) {
-      console.log('   ⚠️  No slides found - auto-generating from course content...');
-      // Check if course has necessary content for generation
-      if (!course.knowledgeText || course.knowledgeText.trim().length === 0) {
-        throw new ValidationError(
-          `Cannot create agent: Course ${courseId} has no slides and no knowledge text to generate from. Please add course content first.`
-        );
-      }
-      // Step 3a: Generate outline from course content
-      console.log('   🧠 [3a/10] Generating course outline...');
-      const outline = course.outline
-        ? course.outline
-        : await generateOutline(
-          c,
-          course.knowledgeText,
-          course.concepts || [],
-          course.accessibility || 'visual',
-          course.keywords,
+      throw new ValidationError(
+        `Cannot create agent: No slides found for course ${courseId}. Please generate slides first using the course workflow.`
       );
-      console.log(`   ✓ Generated outline with ${outline.nodes.length} nodes`);
-      await courseRepo.updateOutline(courseId, {outline: outline});
-      console.log('   ✓ Outline saved to course');
-
-      // Step 3b: Generate slides from outline
-      console.log('   📝 [3b/10] Generating slides from outline...');
-      const generatedSlides = await generateSlides(
-        c,
-        outline.nodes,
-        course.accessibility || 'visual',
-        course.knowledgeText
-      );
-      console.log(`   ✓ Generated ${generatedSlides.length} slides`);
-
-      // Step 3c: Save slides to repository
-      console.log('   💾 [3c/10] Saving generated slides...');
-      slides = [];
-      for (const slideData of generatedSlides) {
-        const savedSlide = await slideRepo.create({
-            ...slideData,
-            courseId: courseId,
-        });
-        slides.push(savedSlide);
-      }
-      console.log(`   ✅ Saved ${slides.length} slides to database`);
-      slidesWereGenerated = true;
-    } else {
-      console.log(`   ✓ Found ${slides.length} slides`);
     }
+    console.log(`   ✓ Found ${slides.length} slides`);
     
     // ────────────────────────────────────────────────────────────
     // STEP 4: Build knowledge base

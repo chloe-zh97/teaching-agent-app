@@ -1,3 +1,4 @@
+// claude-integration.service.ts
 // src/services/course-generation.service.ts
 import { OutlineNode, OutlineStructure, AccessibilityMode, Course } from '../models/course.model';
 import { Slide } from '../models/slide.model';
@@ -23,8 +24,6 @@ export async function generateOutline(
     keywords
   );
 
-  //c.logger.info(`Generate outline prompt: ${prompt}`);
-
   try {
     // Call Claude API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -36,7 +35,8 @@ export async function generateOutline(
       },
       body: JSON.stringify({
         model: 'claude-3-5-haiku-latest',
-        max_tokens: 4000,
+        max_tokens: 8000,
+        temperature: 0.7,
         messages: [
           {
             role: 'user',

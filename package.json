@@ -16,7 +16,7 @@
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.26.0",
     "@hono/zod-openapi": "^1.1.5",
-    "@liquidmetal-ai/raindrop-framework": "0.12.0",
+    "@liquidmetal-ai/raindrop-framework": "0.13.0",
     "@modelcontextprotocol/sdk": "^1",
     "hono": "^4.10.7",
     "kysely": "^0.27.2",
